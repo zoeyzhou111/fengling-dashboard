@@ -763,7 +763,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
 """
         )
 
-    seg_colors = {"初短一部": "#3b82f6", "初短二部": "#8b5cf6", "小短": "#06b6d4", "高短": "#f97316"}
+    seg_colors = {"初短一部": "#ef4444", "初短二部": "#8b5cf6", "小短": "#22c55e", "高短": "#f59e0b"}
 
     def make_line_datasets(rate_col: str, num_col: str, den_col: str) -> List[dict]:
         result = []
