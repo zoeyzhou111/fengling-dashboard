@@ -618,14 +618,14 @@ def team_detail_html(
     date_text: str,
     auth_df: pd.DataFrame,
     sales_df: pd.DataFrame,
-    bad_df: pd.DataFrame,
+    roster_df: pd.DataFrame,
     segment_key: str,
 ) -> str:
     auth_cols = [
         "学部", "年级", "战队", "低价课带班", "全天在线", "个微全天在线率", "接流", "授权人数", "正常人数", "爱芯个微授权率", "个微功能正常率"
     ]
     sales_cols = ["学部", "年级", "战队", "接流人数", "电脑端全天在线人数", "电脑端全天在线率", "手机端全天在线人数", "手机端全天在线率"]
-    bad_cols = ["学部", "年级", "战队", "辅导姓名", "企微-手机在线率", "手机端不在线时段list", "企微-电脑在线率", "电脑端不在线时段list", "个微在线率"]
+    roster_cols = ["学部", "年级", "战队", "辅导姓名", "企微-手机在线率", "手机端不在线时段list", "企微-电脑在线率", "电脑端不在线时段list", "个微在线率"]
     return f"""
 <!doctype html>
 <html lang="zh-CN">
@@ -641,7 +641,7 @@ def team_detail_html(
     <h1 class="main-title">{escape(segment)}｜{escape(team_name)} 战队明细（{escape(date_text)}）</h1>
     {render_team_table(auth_df, auth_cols, ["个微全天在线率", "爱芯个微授权率", "个微功能正常率"], "个微&授权明细")}
     {render_team_table(sales_df, sales_cols, ["电脑端全天在线率", "手机端全天在线率"], "企微在线明细")}
-    {render_team_table(bad_df, bad_cols, ["企微-手机在线率", "企微-电脑在线率", "个微在线率"], "未达标名单明细")}
+    {render_team_table(roster_df, roster_cols, ["企微-手机在线率", "企微-电脑在线率", "个微在线率"], "全量接流名单明细")}
   </div>
 </body>
 </html>
@@ -989,6 +989,7 @@ def main() -> None:
 
         auth = pd.read_excel(auth_file, sheet_name="数据公示表", header=1)
         sales = pd.read_excel(sales_file, sheet_name="战队汇总透视")
+        sales_origin = pd.read_excel(sales_file, sheet_name="销售风灵在线率明细数据")
         bad = pd.read_excel(bad_file, sheet_name="数据透视表", header=1)
         bad_origin = pd.read_excel(bad_file, sheet_name="原表")
 
@@ -1032,6 +1033,39 @@ def main() -> None:
             bad["手机端不在线时段list"] = ""
         bad["手机端不在线时段list"] = bad["手机端不在线时段list"].fillna("").astype(str)
 
+        roster = sales_origin[
+            [
+                "学部",
+                "年级",
+                "战队",
+                "老师姓名",
+                "app在线率",
+                "app不在线时段list",
+                "pc在线率",
+                "pc不在线时段list",
+                "风灵在线率",
+            ]
+        ].copy()
+        roster = roster.rename(
+            columns={
+                "老师姓名": "辅导姓名",
+                "app在线率": "企微-手机在线率",
+                "app不在线时段list": "手机端不在线时段list",
+                "pc在线率": "企微-电脑在线率",
+                "pc不在线时段list": "电脑端不在线时段list",
+                "风灵在线率": "个微在线率",
+            }
+        )
+        roster = roster.dropna(how="all")
+        roster["辅导姓名"] = roster["辅导姓名"].fillna("").astype(str).str.strip()
+        roster = roster[roster["辅导姓名"].ne("")]
+        roster = fill_group_cols(roster, ["学部", "年级", "战队"])
+        roster["战队"] = roster["战队"].astype(str).str.strip()
+        roster = roster[roster["战队"].ne("") & roster["战队"].str.lower().ne("nan")].copy()
+        roster["手机端不在线时段list"] = roster["手机端不在线时段list"].fillna("").astype(str).str.strip()
+        roster["电脑端不在线时段list"] = roster["电脑端不在线时段list"].fillna("").astype(str).str.strip()
+        roster = roster.drop_duplicates(subset=["学部", "年级", "战队", "辅导姓名"], keep="first")
+
         # User-specified correction: keep this team under 高二 for 高短
         if segment == "高短":
             # Keep only expected grades for 高短 bad list; removes anomalies like 六年级.
@@ -1055,9 +1089,13 @@ def main() -> None:
             bad_mask = bad["战队"].astype(str).str.strip().eq("溯川向上-刘炎鹤")
             if bad_mask.any():
                 bad.loc[bad_mask, "年级"] = "高二"
+            roster_mask = roster["战队"].astype(str).str.strip().eq("溯川向上-刘炎鹤")
+            if roster_mask.any():
+                roster.loc[roster_mask, "年级"] = "高二"
             auth = sort_gaoduan_auth_sales(auth)
             sales = sort_gaoduan_auth_sales(sales)
             bad = sort_gaoduan_bad(bad)
+            roster = sort_gaoduan_bad(roster)
 
         if "日期" in bad_origin.columns:
             valid_date = bad_origin["日期"].dropna()
@@ -1150,7 +1188,7 @@ def main() -> None:
         sales_detail = sales_detail[~sales_detail.apply(is_summary_row, axis=1)]
 
         team_set = set()
-        for frame in (auth_detail, sales_detail, bad):
+        for frame in (auth_detail, sales_detail, bad, roster):
             if "战队" in frame.columns:
                 vals = frame["战队"].dropna().astype(str).str.strip()
                 vals = vals[vals.ne("") & vals.ne("#N/A")]
@@ -1159,9 +1197,9 @@ def main() -> None:
         for team in sorted(team_set):
             auth_team = auth_detail[auth_detail["战队"].astype(str).str.strip().eq(team)].copy()
             sales_team = sales_detail[sales_detail["战队"].astype(str).str.strip().eq(team)].copy()
-            bad_team = bad[bad["战队"].astype(str).str.strip().eq(team)].copy()
+            roster_team = roster[roster["战队"].astype(str).str.strip().eq(team)].copy()
             (TEAM_DETAIL_DIR / team_page_name(key, team)).write_text(
-                team_detail_html(segment, team, page_date_text, auth_team, sales_team, bad_team, key),
+                team_detail_html(segment, team, page_date_text, auth_team, sales_team, roster_team, key),
                 encoding="utf-8",
             )
 
