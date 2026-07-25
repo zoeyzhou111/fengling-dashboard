@@ -152,6 +152,17 @@ def rate_level_class(v: object) -> str:
     return ""
 
 
+def kpi_level_class(v: object) -> str:
+    fv = safe_float(v)
+    if fv is None:
+        return ""
+    if fv < 0.5:
+        return " kpi-low"
+    if fv > 0.8:
+        return " kpi-high"
+    return ""
+
+
 def parse_date_text(date_text: str) -> date:
     try:
         return datetime.strptime(str(date_text), "%Y-%m-%d").date()
@@ -533,10 +544,17 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
 .weekly-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
 .weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
+.weekly-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6; }
+.weekly-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 6px solid #8b5cf6; }
+.weekly-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #06b6d4; }
+.weekly-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f97316; }
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
+.kpi-value { font-weight: 800; color: #0f172a; }
+.kpi-low { color: #b91c1c; }
+.kpi-high { color: #15803d; }
 .weekly-table th, .weekly-table td { font-size: 18px; white-space: nowrap; }
-.chart-grid { display: grid; grid-template-columns: 2fr 2fr 1.4fr; gap: 12px; margin: 12px 0 16px; }
+.chart-grid { display: grid; grid-template-columns: repeat(2, minmax(420px, 1fr)); gap: 12px; max-width: 1600px; margin: 12px auto 16px; justify-content: center; }
 .chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
 .chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
 .weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
@@ -722,18 +740,22 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     seg_cards = []
     for seg in SEGMENTS:
         seg_df = week_df[week_df["segment"] == seg]
+        card_cls = f"weekly-{SEGMENT_KEYS.get(seg,'')}"
         if seg_df.empty:
-            seg_cards.append(f'<div class="weekly-card"><div class="weekly-seg">{seg}</div><div class="weekly-kpi">本周暂无数据</div></div>')
+            seg_cards.append(f'<div class="weekly-card {card_cls}"><div class="weekly-seg">{seg}</div><div class="weekly-kpi">本周暂无数据</div></div>')
             continue
+        gwei_avg = seg_df["gwei_rate"].mean()
+        mobile_avg = seg_df["mobile_rate"].mean()
+        pc_avg = seg_df["pc_rate"].mean()
+        auth_avg = seg_df["auth_rate"].mean()
         seg_cards.append(
             f"""
-<div class="weekly-card">
+<div class="weekly-card {card_cls}">
   <div class="weekly-seg">{seg}</div>
-  <div class="weekly-kpi">本周个微在线均值：{safe_pct(seg_df["gwei_rate"].mean())}</div>
-  <div class="weekly-kpi">本周手机端在线均值：{safe_pct(seg_df["mobile_rate"].mean())}</div>
-  <div class="weekly-kpi">本周电脑端在线均值：{safe_pct(seg_df["pc_rate"].mean())}</div>
-  <div class="weekly-kpi">本周授权率均值：{safe_pct(seg_df["auth_rate"].mean())}</div>
-  <div class="weekly-kpi">本周累计不在线人数：{safe_int(seg_df["bad_count"].sum())}</div>
+  <div class="weekly-kpi">本周个微在线均值：<span class="kpi-value{kpi_level_class(gwei_avg)}">{safe_pct(gwei_avg)}</span></div>
+  <div class="weekly-kpi">本周手机端在线均值：<span class="kpi-value{kpi_level_class(mobile_avg)}">{safe_pct(mobile_avg)}</span></div>
+  <div class="weekly-kpi">本周电脑端在线均值：<span class="kpi-value{kpi_level_class(pc_avg)}">{safe_pct(pc_avg)}</span></div>
+  <div class="weekly-kpi">本周授权率均值：<span class="kpi-value{kpi_level_class(auth_avg)}">{safe_pct(auth_avg)}</span></div>
 </div>
 """
         )
@@ -767,8 +789,6 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     mobile_datasets = make_line_datasets("mobile_rate", "mobile_num", "mobile_den")
     pc_datasets = make_line_datasets("pc_rate", "pc_num", "pc_den")
     auth_datasets = make_line_datasets("auth_rate", "auth_num", "auth_den")
-    pie_labels = SEGMENTS
-    pie_values = [int(week_df[week_df["segment"] == seg]["bad_count"].sum()) for seg in SEGMENTS]
 
     pivot_rows = []
     recent = week_df.sort_values("date").drop_duplicates(["date_text", "segment"], keep="last")
@@ -825,10 +845,6 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
         <h3 class="chart-title">本周授权率趋势（%）</h3>
         <canvas id="authTrend"></canvas>
       </div>
-      <div class="chart-card">
-        <h3 class="chart-title">本周不在线人数占比</h3>
-        <canvas id="badPie"></canvas>
-      </div>
     </section>
     <table class="sheet-table weekly-table">
       <thead>
@@ -847,8 +863,6 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     const mobileDatasets = {json.dumps(mobile_datasets, ensure_ascii=False)};
     const pcDatasets = {json.dumps(pc_datasets, ensure_ascii=False)};
     const authDatasets = {json.dumps(auth_datasets, ensure_ascii=False)};
-    const pieLabels = {json.dumps(pie_labels, ensure_ascii=False)};
-    const pieValues = {json.dumps(pie_values, ensure_ascii=False)};
     const tooltipCb = {{
       callbacks: {{
         label: function(ctx) {{
@@ -887,11 +901,6 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
       type: 'line',
       data: {{ labels, datasets: authDatasets }},
       options: commonOptions
-    }});
-    new Chart(document.getElementById('badPie'), {{
-      type: 'pie',
-      data: {{ labels: pieLabels, datasets: [{{ data: pieValues, backgroundColor: ['#3b82f6','#8b5cf6','#06b6d4','#f97316'] }}] }},
-      options: {{ responsive: true, plugins: {{ legend: {{ position: 'bottom' }} }} }}
     }});
   </script>
 </body>
