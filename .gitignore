@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Excel temporary lock files
+.~*.xlsx
+**/.~*.xlsx
+
+# Local output artifacts (keep local, don't publish to git)
+每日输出/**/*.xlsx
+每日三表汇总看板.xlsx
+周维度在线率看板.html
