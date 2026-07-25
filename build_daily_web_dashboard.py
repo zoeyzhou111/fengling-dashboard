@@ -1009,6 +1009,8 @@ def main() -> None:
         ].copy()
         bad = bad[bad["辅导姓名"].astype(str).str.strip().ne("")]
         bad = fill_group_cols(bad, ["学部", "年级", "战队"])
+        bad["战队"] = bad["战队"].astype(str).str.strip()
+        bad = bad[bad["战队"].ne("") & bad["战队"].str.lower().ne("nan")].copy()
         pc_offline_map = build_pc_offline_period_map(bad_origin)
         mobile_offline_map = build_mobile_offline_period_map(bad_origin)
         if not pc_offline_map.empty:
