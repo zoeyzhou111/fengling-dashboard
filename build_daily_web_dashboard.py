@@ -801,15 +801,15 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
             if r is None:
                 row.append("<td>#N/A</td><td>#N/A</td><td>#N/A</td>")
             else:
-                gwei_cls = rate_level_class(r["gwei_rate"])
-                auth_cls = rate_level_class(r["auth_rate"])
+                pc_cls = rate_level_class(r["pc_rate"])
+                mobile_cls = rate_level_class(r["mobile_rate"])
                 row.append(
-                    f"<td class='rate-blue{gwei_cls}'>{safe_pct(r['gwei_rate'])}</td><td class='rate-green{auth_cls}'>{safe_pct(r['auth_rate'])}</td><td>{safe_int(r['bad_count'])}</td>"
+                    f"<td class='rate-blue{pc_cls}'>{safe_pct(r['pc_rate'])}</td><td class='rate-yellow{mobile_cls}'>{safe_pct(r['mobile_rate'])}</td><td>{safe_int(r['bad_count'])}</td>"
                 )
         pivot_rows.append(f"<tr>{''.join(row)}</tr>")
 
     seg_headers = "".join([f"<th colspan='3'>{seg}</th>" for seg in SEGMENTS])
-    sub_headers = "".join(["<th>个微在线率</th><th>授权率</th><th>不在线人数</th>" for _ in SEGMENTS])
+    sub_headers = "".join(["<th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th>" for _ in SEGMENTS])
     subtitle = f"{week_start.isoformat()} ~ {week_end.isoformat()}（周一至周日）"
     return f"""
 <!doctype html>
