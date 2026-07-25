@@ -26,6 +26,9 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .rate-high { color: #15803d !important; background-image: none !important; background-color: #dcfce7 !important; }
 .dashboard-title { text-align: center; color: #6d28d9; font-size: 34px; margin: 8px 0 18px; }
 .dashboard-sub { text-align: center; color: #6b7280; margin-bottom: 18px; font-size: 18px; }
+.weekly-inline-link-wrap { text-align: center; margin: -8px 0 18px; }
+.weekly-inline-link { font-size: 22px; font-weight: 700; color: #2563eb; text-decoration: none; border-bottom: 2px solid #bfdbfe; padding-bottom: 2px; }
+.weekly-inline-link:hover { color: #1d4ed8; border-bottom-color: #60a5fa; }
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
 .segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
 .segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
@@ -57,7 +60,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .kpi-value { font-weight: 800; color: #0f172a; }
 .kpi-low { color: #b91c1c; }
 .kpi-high { color: #15803d; }
-.weekly-table th, .weekly-table td { font-size: 18px; white-space: nowrap; }
+.weekly-table th, .weekly-table td { font-size: 16px; white-space: nowrap; padding: 6px 8px; }
 .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(420px, 1fr)); gap: 12px; max-width: 1600px; margin: 12px auto 16px; justify-content: center; }
 .chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
 .chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
@@ -75,6 +78,9 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 <body>
   <div class="page">
     <h1 class="dashboard-title">每日三表汇总看板（郑州）</h1>
+    <div class="weekly-inline-link-wrap">
+      <a class="weekly-inline-link" href="周维度在线率看板.html">每周维度在线率看板（点击进入）</a>
+    </div>
     <div class="dashboard-sub">2026-07-24｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
     
 <section class="segment-block segment-chuduan1">
@@ -161,16 +167,6 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
   </div>
 </section>
 
-    <section class="segment-block weekly-entry">
-      <h2 class="segment-name">周汇总入口（周一至周日）</h2>
-      <div class="cards">
-        <a class="card-link card-online" href="周维度在线率看板.html">
-          <div class="card-label">周维度在线率看板</div>
-          <div class="card-value">查看本周汇总</div>
-          <div class="card-sub">折线图 + 饼图 + 周指标表（按学部分组）</div>
-        </a>
-      </div>
-    </section>
   </div>
 </body>
 </html>
