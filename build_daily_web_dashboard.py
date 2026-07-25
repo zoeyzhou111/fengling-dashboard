@@ -168,6 +168,17 @@ def update_history(history_date: date, summary_rows: List[dict]) -> pd.DataFrame
                 "segment": row["segment"],
                 "auth_rate": row.get("auth_rate_value"),
                 "online_rate": row.get("online_rate_value"),
+                "gwei_rate": row.get("gwei_rate_value"),
+                "gwei_num": row.get("gwei_num"),
+                "gwei_den": row.get("gwei_den"),
+                "mobile_rate": row.get("mobile_rate_value"),
+                "mobile_num": row.get("mobile_num"),
+                "mobile_den": row.get("mobile_den"),
+                "pc_rate": row.get("pc_rate_value"),
+                "pc_num": row.get("pc_num"),
+                "pc_den": row.get("pc_den"),
+                "auth_num": row.get("auth_num"),
+                "auth_den": row.get("auth_den"),
                 "bad_count": row.get("bad_count_value"),
             }
         )
@@ -175,13 +186,43 @@ def update_history(history_date: date, summary_rows: List[dict]) -> pd.DataFrame
     if HISTORY_CSV.exists():
         old_df = pd.read_csv(HISTORY_CSV)
     else:
-        old_df = pd.DataFrame(columns=["date", "segment", "auth_rate", "online_rate", "bad_count"])
+        old_df = pd.DataFrame(
+            columns=[
+                "date",
+                "segment",
+                "auth_rate",
+                "online_rate",
+                "gwei_rate",
+                "gwei_num",
+                "gwei_den",
+                "mobile_rate",
+                "mobile_num",
+                "mobile_den",
+                "pc_rate",
+                "pc_num",
+                "pc_den",
+                "auth_num",
+                "auth_den",
+                "bad_count",
+            ]
+        )
     combined = new_df.copy() if old_df.empty else pd.concat([old_df, new_df], ignore_index=True)
     combined = combined.drop_duplicates(subset=["date", "segment"], keep="last")
     combined["date"] = combined["date"].astype(str)
     combined["segment"] = combined["segment"].astype(str)
     combined["auth_rate"] = pd.to_numeric(combined["auth_rate"], errors="coerce")
     combined["online_rate"] = pd.to_numeric(combined["online_rate"], errors="coerce")
+    combined["gwei_rate"] = pd.to_numeric(combined.get("gwei_rate"), errors="coerce")
+    combined["mobile_rate"] = pd.to_numeric(combined.get("mobile_rate"), errors="coerce")
+    combined["pc_rate"] = pd.to_numeric(combined.get("pc_rate"), errors="coerce")
+    combined["gwei_num"] = pd.to_numeric(combined.get("gwei_num"), errors="coerce")
+    combined["gwei_den"] = pd.to_numeric(combined.get("gwei_den"), errors="coerce")
+    combined["mobile_num"] = pd.to_numeric(combined.get("mobile_num"), errors="coerce")
+    combined["mobile_den"] = pd.to_numeric(combined.get("mobile_den"), errors="coerce")
+    combined["pc_num"] = pd.to_numeric(combined.get("pc_num"), errors="coerce")
+    combined["pc_den"] = pd.to_numeric(combined.get("pc_den"), errors="coerce")
+    combined["auth_num"] = pd.to_numeric(combined.get("auth_num"), errors="coerce")
+    combined["auth_den"] = pd.to_numeric(combined.get("auth_den"), errors="coerce")
     combined["bad_count"] = pd.to_numeric(combined["bad_count"], errors="coerce").fillna(0).astype(int)
     combined = combined.sort_values(["date", "segment"]).reset_index(drop=True)
     combined.to_csv(HISTORY_CSV, index=False, encoding="utf-8-sig")
@@ -652,6 +693,26 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     if df.empty:
         return build_weekly_page(pd.DataFrame(), today)
 
+    for col in [
+        "auth_rate",
+        "online_rate",
+        "gwei_rate",
+        "mobile_rate",
+        "pc_rate",
+        "auth_num",
+        "auth_den",
+        "gwei_num",
+        "gwei_den",
+        "mobile_num",
+        "mobile_den",
+        "pc_num",
+        "pc_den",
+        "bad_count",
+    ]:
+        if col not in df.columns:
+            df[col] = pd.NA
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
     labels = [(week_start + timedelta(days=i)).isoformat() for i in range(7)]
@@ -662,48 +723,52 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     for seg in SEGMENTS:
         seg_df = week_df[week_df["segment"] == seg]
         if seg_df.empty:
-            seg_cards.append(
-                f'<div class="weekly-card"><div class="weekly-seg">{seg}</div><div class="weekly-kpi">本周暂无数据</div></div>'
-            )
+            seg_cards.append(f'<div class="weekly-card"><div class="weekly-seg">{seg}</div><div class="weekly-kpi">本周暂无数据</div></div>')
             continue
-        auth_avg = seg_df["auth_rate"].mean()
-        online_avg = seg_df["online_rate"].mean()
-        bad_sum = int(seg_df["bad_count"].sum())
         seg_cards.append(
             f"""
 <div class="weekly-card">
   <div class="weekly-seg">{seg}</div>
-  <div class="weekly-kpi">本周平均授权率：{safe_pct(auth_avg)}</div>
-  <div class="weekly-kpi">本周平均在线率：{safe_pct(online_avg)}</div>
-  <div class="weekly-kpi">本周累计不在线人数：{bad_sum}</div>
+  <div class="weekly-kpi">本周个微在线均值：{safe_pct(seg_df["gwei_rate"].mean())}</div>
+  <div class="weekly-kpi">本周手机端在线均值：{safe_pct(seg_df["mobile_rate"].mean())}</div>
+  <div class="weekly-kpi">本周电脑端在线均值：{safe_pct(seg_df["pc_rate"].mean())}</div>
+  <div class="weekly-kpi">本周授权率均值：{safe_pct(seg_df["auth_rate"].mean())}</div>
+  <div class="weekly-kpi">本周累计不在线人数：{safe_int(seg_df["bad_count"].sum())}</div>
 </div>
 """
         )
 
-    online_datasets = []
-    auth_datasets = []
-    pie_labels = []
-    pie_values = []
-    seg_colors = {
-        "初短一部": "#3b82f6",
-        "初短二部": "#8b5cf6",
-        "小短": "#06b6d4",
-        "高短": "#f97316",
-    }
-    for seg in SEGMENTS:
-        seg_df = week_df[week_df["segment"] == seg]
-        seg_map_online = {r["date_text"]: safe_float(r["online_rate"]) for _, r in seg_df.iterrows()}
-        seg_map_auth = {r["date_text"]: safe_float(r["auth_rate"]) for _, r in seg_df.iterrows()}
-        online_vals = [round((seg_map_online.get(d) or 0) * 100, 2) for d in labels]
-        auth_vals = [round((seg_map_auth.get(d) or 0) * 100, 2) for d in labels]
-        online_datasets.append(
-            {"label": seg, "data": online_vals, "borderColor": seg_colors.get(seg, "#334155"), "backgroundColor": seg_colors.get(seg, "#334155"), "tension": 0.25}
-        )
-        auth_datasets.append(
-            {"label": seg, "data": auth_vals, "borderColor": seg_colors.get(seg, "#334155"), "backgroundColor": seg_colors.get(seg, "#334155"), "tension": 0.25}
-        )
-        pie_labels.append(seg)
-        pie_values.append(int(seg_df["bad_count"].sum()) if not seg_df.empty else 0)
+    seg_colors = {"初短一部": "#3b82f6", "初短二部": "#8b5cf6", "小短": "#06b6d4", "高短": "#f97316"}
+
+    def make_line_datasets(rate_col: str, num_col: str, den_col: str) -> List[dict]:
+        result = []
+        for seg in SEGMENTS:
+            seg_df = week_df[week_df["segment"] == seg]
+            rate_map = {r["date_text"]: safe_float(r[rate_col]) for _, r in seg_df.iterrows()}
+            num_map = {r["date_text"]: safe_float(r[num_col]) for _, r in seg_df.iterrows()}
+            den_map = {r["date_text"]: safe_float(r[den_col]) for _, r in seg_df.iterrows()}
+            vals = [round((rate_map.get(d) or 0) * 100, 2) for d in labels]
+            nums = [None if num_map.get(d) is None else int(num_map.get(d)) for d in labels]
+            dens = [None if den_map.get(d) is None else int(den_map.get(d)) for d in labels]
+            result.append(
+                {
+                    "label": seg,
+                    "data": vals,
+                    "nums": nums,
+                    "dens": dens,
+                    "borderColor": seg_colors.get(seg, "#334155"),
+                    "backgroundColor": seg_colors.get(seg, "#334155"),
+                    "tension": 0.25,
+                }
+            )
+        return result
+
+    gwei_datasets = make_line_datasets("gwei_rate", "gwei_num", "gwei_den")
+    mobile_datasets = make_line_datasets("mobile_rate", "mobile_num", "mobile_den")
+    pc_datasets = make_line_datasets("pc_rate", "pc_num", "pc_den")
+    auth_datasets = make_line_datasets("auth_rate", "auth_num", "auth_den")
+    pie_labels = SEGMENTS
+    pie_values = [int(week_df[week_df["segment"] == seg]["bad_count"].sum()) for seg in SEGMENTS]
 
     pivot_rows = []
     recent = week_df.sort_values("date").drop_duplicates(["date_text", "segment"], keep="last")
@@ -716,16 +781,16 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
             if r is None:
                 row.append("<td>#N/A</td><td>#N/A</td><td>#N/A</td>")
             else:
+                gwei_cls = rate_level_class(r["gwei_rate"])
                 auth_cls = rate_level_class(r["auth_rate"])
-                online_cls = rate_level_class(r["online_rate"])
                 row.append(
-                    f"<td class='rate-green{auth_cls}'>{safe_pct(r['auth_rate'])}</td><td class='rate-blue{online_cls}'>{safe_pct(r['online_rate'])}</td><td>{safe_int(r['bad_count'])}</td>"
+                    f"<td class='rate-blue{gwei_cls}'>{safe_pct(r['gwei_rate'])}</td><td class='rate-green{auth_cls}'>{safe_pct(r['auth_rate'])}</td><td>{safe_int(r['bad_count'])}</td>"
                 )
         pivot_rows.append(f"<tr>{''.join(row)}</tr>")
 
     seg_headers = "".join([f"<th colspan='3'>{seg}</th>" for seg in SEGMENTS])
-    sub_headers = "".join(["<th>授权率</th><th>在线率</th><th>不在线人数</th>" for _ in SEGMENTS])
-    subtitle = f"{week_start.isoformat()} ~ {week_end.isoformat()}（周维度）"
+    sub_headers = "".join(["<th>个微在线率</th><th>授权率</th><th>不在线人数</th>" for _ in SEGMENTS])
+    subtitle = f"{week_start.isoformat()} ~ {week_end.isoformat()}（周一至周日）"
     return f"""
 <!doctype html>
 <html lang="zh-CN">
@@ -745,8 +810,16 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     </section>
     <section class="chart-grid">
       <div class="chart-card">
-        <h3 class="chart-title">本周在线率趋势（%）</h3>
-        <canvas id="onlineTrend"></canvas>
+        <h3 class="chart-title">本周个微在线率趋势（%）</h3>
+        <canvas id="gweiTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">本周手机端在线率趋势（%）</h3>
+        <canvas id="mobileTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">本周电脑端在线率趋势（%）</h3>
+        <canvas id="pcTrend"></canvas>
       </div>
       <div class="chart-card">
         <h3 class="chart-title">本周授权率趋势（%）</h3>
@@ -770,18 +843,44 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const labels = {json.dumps(labels, ensure_ascii=False)};
-    const onlineDatasets = {json.dumps(online_datasets, ensure_ascii=False)};
+    const gweiDatasets = {json.dumps(gwei_datasets, ensure_ascii=False)};
+    const mobileDatasets = {json.dumps(mobile_datasets, ensure_ascii=False)};
+    const pcDatasets = {json.dumps(pc_datasets, ensure_ascii=False)};
     const authDatasets = {json.dumps(auth_datasets, ensure_ascii=False)};
     const pieLabels = {json.dumps(pie_labels, ensure_ascii=False)};
     const pieValues = {json.dumps(pie_values, ensure_ascii=False)};
+    const tooltipCb = {{
+      callbacks: {{
+        label: function(ctx) {{
+          const ds = ctx.dataset;
+          const i = ctx.dataIndex;
+          const num = ds.nums ? ds.nums[i] : null;
+          const den = ds.dens ? ds.dens[i] : null;
+          if (num === null || den === null || den === 0) {{
+            return `${{ds.label}}: ${{ctx.formattedValue}}%`;
+          }}
+          return `${{ds.label}}: ${{ctx.formattedValue}}% (${{num}}/${{den}})`;
+        }}
+      }}
+    }};
     const commonOptions = {{
       responsive: true,
-      plugins: {{ legend: {{ position: 'bottom' }} }},
+      plugins: Object.assign({{ legend: {{ position: 'bottom' }} }}, tooltipCb),
       scales: {{ y: {{ min: 0, max: 100 }} }}
     }};
-    new Chart(document.getElementById('onlineTrend'), {{
+    new Chart(document.getElementById('gweiTrend'), {{
       type: 'line',
-      data: {{ labels, datasets: onlineDatasets }},
+      data: {{ labels, datasets: gweiDatasets }},
+      options: commonOptions
+    }});
+    new Chart(document.getElementById('mobileTrend'), {{
+      type: 'line',
+      data: {{ labels, datasets: mobileDatasets }},
+      options: commonOptions
+    }});
+    new Chart(document.getElementById('pcTrend'), {{
+      type: 'line',
+      data: {{ labels, datasets: pcDatasets }},
       options: commonOptions
     }});
     new Chart(document.getElementById('authTrend'), {{
@@ -962,11 +1061,18 @@ def main() -> None:
         sales_sum = pick_overall_summary_row(sales, "接流人数")
 
         auth_rate_value = safe_float(auth_sum["爱芯个微授权率"]) if auth_sum is not None else None
+        auth_num = safe_float(auth_sum["授权人数"]) if auth_sum is not None else None
+        auth_den = safe_float(auth_sum["接流"]) if auth_sum is not None else None
+        gwei_rate_value = safe_float(auth_sum["个微全天在线率"]) if auth_sum is not None else None
+        gwei_num = safe_float(auth_sum["全天在线"]) if auth_sum is not None else None
+        gwei_den = safe_float(auth_sum["低价课带班"]) if auth_sum is not None else None
         auth_rate = safe_pct(auth_rate_value) if auth_rate_value is not None else "#N/A"
         if sales_sum is not None:
             total = pd.to_numeric(sales_sum["接流人数"], errors="coerce")
             pc = pd.to_numeric(sales_sum["电脑端全天在线人数"], errors="coerce")
             mobile = pd.to_numeric(sales_sum["手机端全天在线人数"], errors="coerce")
+            pc_rate_value = safe_float(sales_sum["电脑端全天在线率"])
+            mobile_rate_value = safe_float(sales_sum["手机端全天在线率"])
             if pd.notna(total) and total and pd.notna(pc) and pd.notna(mobile):
                 online = (float(pc) + float(mobile)) / (2 * float(total))
                 online_rate_value = online
@@ -975,10 +1081,20 @@ def main() -> None:
                 online_rate_value = None
                 online_rate = "#N/A"
             online_sub = f"电脑端：{safe_pct(sales_sum['电脑端全天在线率'])}｜手机端：{safe_pct(sales_sum['手机端全天在线率'])}"
+            pc_num = safe_float(pc)
+            pc_den = safe_float(total)
+            mobile_num = safe_float(mobile)
+            mobile_den = safe_float(total)
         else:
             online_rate_value = None
             online_rate = "#N/A"
             online_sub = "电脑端：#N/A｜手机端：#N/A"
+            pc_rate_value = None
+            mobile_rate_value = None
+            pc_num = None
+            pc_den = None
+            mobile_num = None
+            mobile_den = None
 
         bad_count_value = int(len(bad))
         bad_count = str(bad_count_value)
@@ -992,6 +1108,17 @@ def main() -> None:
                 "bad_count": bad_count,
                 "auth_rate_value": auth_rate_value,
                 "online_rate_value": online_rate_value,
+                "gwei_rate_value": gwei_rate_value,
+                "gwei_num": gwei_num,
+                "gwei_den": gwei_den,
+                "mobile_rate_value": mobile_rate_value,
+                "mobile_num": mobile_num,
+                "mobile_den": mobile_den,
+                "pc_rate_value": pc_rate_value,
+                "pc_num": pc_num,
+                "pc_den": pc_den,
+                "auth_num": auth_num,
+                "auth_den": auth_den,
                 "bad_count_value": bad_count_value,
             }
         )

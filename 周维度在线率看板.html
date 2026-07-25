@@ -69,42 +69,58 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
   <div class="page">
     <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
     <h1 class="dashboard-title">周维度在线率看板（郑州）</h1>
-    <div class="dashboard-sub">2026-07-20 ~ 2026-07-26（周维度）</div>
+    <div class="dashboard-sub">2026-07-20 ~ 2026-07-26（周一至周日）</div>
     <section class="weekly-grid">
       
 <div class="weekly-card">
   <div class="weekly-seg">初短一部</div>
-  <div class="weekly-kpi">本周平均授权率：60.89%</div>
-  <div class="weekly-kpi">本周平均在线率：59.56%</div>
-  <div class="weekly-kpi">本周累计不在线人数：182</div>
+  <div class="weekly-kpi">本周个微在线均值：54.87%</div>
+  <div class="weekly-kpi">本周手机端在线均值：73.89%</div>
+  <div class="weekly-kpi">本周电脑端在线均值：100.00%</div>
+  <div class="weekly-kpi">本周授权率均值：98.23%</div>
+  <div class="weekly-kpi">本周累计不在线人数：4619</div>
 </div>
 
 <div class="weekly-card">
   <div class="weekly-seg">初短二部</div>
-  <div class="weekly-kpi">本周平均授权率：90.00%</div>
-  <div class="weekly-kpi">本周平均在线率：60.00%</div>
-  <div class="weekly-kpi">本周累计不在线人数：146</div>
+  <div class="weekly-kpi">本周个微在线均值：65.57%</div>
+  <div class="weekly-kpi">本周手机端在线均值：80.87%</div>
+  <div class="weekly-kpi">本周电脑端在线均值：100.00%</div>
+  <div class="weekly-kpi">本周授权率均值：100.00%</div>
+  <div class="weekly-kpi">本周累计不在线人数：3692</div>
 </div>
 
 <div class="weekly-card">
   <div class="weekly-seg">小短</div>
-  <div class="weekly-kpi">本周平均授权率：80.95%</div>
-  <div class="weekly-kpi">本周平均在线率：69.05%</div>
-  <div class="weekly-kpi">本周累计不在线人数：13</div>
+  <div class="weekly-kpi">本周个微在线均值：80.95%</div>
+  <div class="weekly-kpi">本周手机端在线均值：90.48%</div>
+  <div class="weekly-kpi">本周电脑端在线均值：100.00%</div>
+  <div class="weekly-kpi">本周授权率均值：90.48%</div>
+  <div class="weekly-kpi">本周累计不在线人数：345</div>
 </div>
 
 <div class="weekly-card">
   <div class="weekly-seg">高短</div>
-  <div class="weekly-kpi">本周平均授权率：84.92%</div>
-  <div class="weekly-kpi">本周平均在线率：75.00%</div>
-  <div class="weekly-kpi">本周累计不在线人数：77</div>
+  <div class="weekly-kpi">本周个微在线均值：96.12%</div>
+  <div class="weekly-kpi">本周手机端在线均值：100.00%</div>
+  <div class="weekly-kpi">本周电脑端在线均值：100.00%</div>
+  <div class="weekly-kpi">本周授权率均值：100.00%</div>
+  <div class="weekly-kpi">本周累计不在线人数：2348</div>
 </div>
 
     </section>
     <section class="chart-grid">
       <div class="chart-card">
-        <h3 class="chart-title">本周在线率趋势（%）</h3>
-        <canvas id="onlineTrend"></canvas>
+        <h3 class="chart-title">本周个微在线率趋势（%）</h3>
+        <canvas id="gweiTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">本周手机端在线率趋势（%）</h3>
+        <canvas id="mobileTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">本周电脑端在线率趋势（%）</h3>
+        <canvas id="pcTrend"></canvas>
       </div>
       <div class="chart-card">
         <h3 class="chart-title">本周授权率趋势（%）</h3>
@@ -118,28 +134,54 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
     <table class="sheet-table weekly-table">
       <thead>
         <tr><th rowspan="2">日期</th><th colspan='3'>初短一部</th><th colspan='3'>初短二部</th><th colspan='3'>小短</th><th colspan='3'>高短</th></tr>
-        <tr><th>授权率</th><th>在线率</th><th>不在线人数</th><th>授权率</th><th>在线率</th><th>不在线人数</th><th>授权率</th><th>在线率</th><th>不在线人数</th><th>授权率</th><th>在线率</th><th>不在线人数</th></tr>
+        <tr><th>个微在线率</th><th>授权率</th><th>不在线人数</th><th>个微在线率</th><th>授权率</th><th>不在线人数</th><th>个微在线率</th><th>授权率</th><th>不在线人数</th><th>个微在线率</th><th>授权率</th><th>不在线人数</th></tr>
       </thead>
       <tbody>
-        <tr><td>2026-07-20</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-21</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-22</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-23</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-24</td><td class='rate-green'>60.89%</td><td class='rate-blue'>59.56%</td><td>182</td><td class='rate-green rate-high'>90.00%</td><td class='rate-blue'>60.00%</td><td>146</td><td class='rate-green rate-high'>80.95%</td><td class='rate-blue'>69.05%</td><td>13</td><td class='rate-green rate-high'>84.92%</td><td class='rate-blue'>75.00%</td><td>77</td></tr><tr><td>2026-07-25</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-26</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr>
+        <tr><td>2026-07-20</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-21</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-22</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-23</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-24</td><td class='rate-blue'>54.87%</td><td class='rate-green rate-high'>98.23%</td><td>4619</td><td class='rate-blue'>65.57%</td><td class='rate-green rate-high'>100.00%</td><td>3692</td><td class='rate-blue rate-high'>80.95%</td><td class='rate-green rate-high'>90.48%</td><td>345</td><td class='rate-blue rate-high'>96.12%</td><td class='rate-green rate-high'>100.00%</td><td>2348</td></tr><tr><td>2026-07-25</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-26</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr>
       </tbody>
     </table>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const labels = ["2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26"];
-    const onlineDatasets = [{"label": "初短一部", "data": [0, 0, 0, 0, 59.56, 0, 0], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "tension": 0.25}, {"label": "初短二部", "data": [0, 0, 0, 0, 60.0, 0, 0], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [0, 0, 0, 0, 69.05, 0, 0], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "tension": 0.25}, {"label": "高短", "data": [0, 0, 0, 0, 75.0, 0, 0], "borderColor": "#f97316", "backgroundColor": "#f97316", "tension": 0.25}];
-    const authDatasets = [{"label": "初短一部", "data": [0, 0, 0, 0, 60.89, 0, 0], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "tension": 0.25}, {"label": "初短二部", "data": [0, 0, 0, 0, 90.0, 0, 0], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [0, 0, 0, 0, 80.95, 0, 0], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "tension": 0.25}, {"label": "高短", "data": [0, 0, 0, 0, 84.92, 0, 0], "borderColor": "#f97316", "backgroundColor": "#f97316", "tension": 0.25}];
+    const gweiDatasets = [{"label": "初短一部", "data": [0, 0, 0, 0, 54.87, 0, 0], "nums": [null, null, null, null, 124, null, null], "dens": [null, null, null, null, 226, null, null], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "tension": 0.25}, {"label": "初短二部", "data": [0, 0, 0, 0, 65.57, 0, 0], "nums": [null, null, null, null, 120, null, null], "dens": [null, null, null, null, 183, null, null], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [0, 0, 0, 0, 80.95, 0, 0], "nums": [null, null, null, null, 17, null, null], "dens": [null, null, null, null, 21, null, null], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "tension": 0.25}, {"label": "高短", "data": [0, 0, 0, 0, 96.12, 0, 0], "nums": [null, null, null, null, 124, null, null], "dens": [null, null, null, null, 129, null, null], "borderColor": "#f97316", "backgroundColor": "#f97316", "tension": 0.25}];
+    const mobileDatasets = [{"label": "初短一部", "data": [0, 0, 0, 0, 73.89, 0, 0], "nums": [null, null, null, null, 167, null, null], "dens": [null, null, null, null, 226, null, null], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "tension": 0.25}, {"label": "初短二部", "data": [0, 0, 0, 0, 80.87, 0, 0], "nums": [null, null, null, null, 148, null, null], "dens": [null, null, null, null, 183, null, null], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [0, 0, 0, 0, 90.48, 0, 0], "nums": [null, null, null, null, 19, null, null], "dens": [null, null, null, null, 21, null, null], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "tension": 0.25}, {"label": "高短", "data": [0, 0, 0, 0, 100.0, 0, 0], "nums": [null, null, null, null, 129, null, null], "dens": [null, null, null, null, 129, null, null], "borderColor": "#f97316", "backgroundColor": "#f97316", "tension": 0.25}];
+    const pcDatasets = [{"label": "初短一部", "data": [0, 0, 0, 0, 100.0, 0, 0], "nums": [null, null, null, null, 226, null, null], "dens": [null, null, null, null, 226, null, null], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "tension": 0.25}, {"label": "初短二部", "data": [0, 0, 0, 0, 100.0, 0, 0], "nums": [null, null, null, null, 183, null, null], "dens": [null, null, null, null, 183, null, null], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [0, 0, 0, 0, 100.0, 0, 0], "nums": [null, null, null, null, 21, null, null], "dens": [null, null, null, null, 21, null, null], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "tension": 0.25}, {"label": "高短", "data": [0, 0, 0, 0, 100.0, 0, 0], "nums": [null, null, null, null, 129, null, null], "dens": [null, null, null, null, 129, null, null], "borderColor": "#f97316", "backgroundColor": "#f97316", "tension": 0.25}];
+    const authDatasets = [{"label": "初短一部", "data": [0, 0, 0, 0, 98.23, 0, 0], "nums": [null, null, null, null, 222, null, null], "dens": [null, null, null, null, 226, null, null], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "tension": 0.25}, {"label": "初短二部", "data": [0, 0, 0, 0, 100.0, 0, 0], "nums": [null, null, null, null, 183, null, null], "dens": [null, null, null, null, 183, null, null], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [0, 0, 0, 0, 90.48, 0, 0], "nums": [null, null, null, null, 19, null, null], "dens": [null, null, null, null, 21, null, null], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "tension": 0.25}, {"label": "高短", "data": [0, 0, 0, 0, 100.0, 0, 0], "nums": [null, null, null, null, 129, null, null], "dens": [null, null, null, null, 129, null, null], "borderColor": "#f97316", "backgroundColor": "#f97316", "tension": 0.25}];
     const pieLabels = ["初短一部", "初短二部", "小短", "高短"];
-    const pieValues = [182, 146, 13, 77];
+    const pieValues = [4619, 3692, 345, 2348];
+    const tooltipCb = {
+      callbacks: {
+        label: function(ctx) {
+          const ds = ctx.dataset;
+          const i = ctx.dataIndex;
+          const num = ds.nums ? ds.nums[i] : null;
+          const den = ds.dens ? ds.dens[i] : null;
+          if (num === null || den === null || den === 0) {
+            return `${ds.label}: ${ctx.formattedValue}%`;
+          }
+          return `${ds.label}: ${ctx.formattedValue}% (${num}/${den})`;
+        }
+      }
+    };
     const commonOptions = {
       responsive: true,
-      plugins: { legend: { position: 'bottom' } },
+      plugins: Object.assign({ legend: { position: 'bottom' } }, tooltipCb),
       scales: { y: { min: 0, max: 100 } }
     };
-    new Chart(document.getElementById('onlineTrend'), {
+    new Chart(document.getElementById('gweiTrend'), {
       type: 'line',
-      data: { labels, datasets: onlineDatasets },
+      data: { labels, datasets: gweiDatasets },
+      options: commonOptions
+    });
+    new Chart(document.getElementById('mobileTrend'), {
+      type: 'line',
+      data: { labels, datasets: mobileDatasets },
+      options: commonOptions
+    });
+    new Chart(document.getElementById('pcTrend'), {
+      type: 'line',
+      data: { labels, datasets: pcDatasets },
       options: commonOptions
     });
     new Chart(document.getElementById('authTrend'), {
