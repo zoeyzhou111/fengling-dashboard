@@ -472,7 +472,7 @@ def render_team_table(df: pd.DataFrame, cols: List[str], rate_cols: List[str], t
                 if "功能" in c:
                     cls = "rate-mint"
                 tds.append(f'<td class="{cls}">{txt}</td>')
-            elif c in {"学部", "年级", "战队", "辅导姓名", "不在线时段list", "电脑端不在线时段list"}:
+            elif c in {"学部", "年级", "战队", "辅导姓名", "电脑端不在线时段list", "手机端不在线时段list"}:
                 tds.append(f"<td>{escape(safe_text(v))}</td>")
             else:
                 tds.append(f"<td>{safe_int(v)}</td>")
@@ -499,7 +499,7 @@ def team_detail_html(
         "学部", "年级", "战队", "低价课带班", "全天在线", "个微全天在线率", "接流", "授权人数", "正常人数", "爱芯个微授权率", "个微功能正常率"
     ]
     sales_cols = ["学部", "年级", "战队", "接流人数", "电脑端全天在线人数", "电脑端全天在线率", "手机端全天在线人数", "手机端全天在线率"]
-    bad_cols = ["学部", "年级", "战队", "辅导姓名", "企微-手机在线率", "企微-电脑在线率", "个微在线率", "不在线时段list", "电脑端不在线时段list"]
+    bad_cols = ["学部", "年级", "战队", "辅导姓名", "企微-手机在线率", "企微-电脑在线率", "电脑端不在线时段list", "个微在线率", "手机端不在线时段list"]
     return f"""
 <!doctype html>
 <html lang="zh-CN">
@@ -522,25 +522,6 @@ def team_detail_html(
 """
 
 
-def build_offline_period_map(df: pd.DataFrame) -> pd.DataFrame:
-    expected = {"学部", "年级", "战队", "辅导姓名", "不在线时段list"}
-    if not expected.issubset(set(df.columns)):
-        return pd.DataFrame(columns=["学部", "年级", "战队", "辅导姓名", "不在线时段list"])
-    d = df[["学部", "年级", "战队", "辅导姓名", "不在线时段list"]].copy()
-    d = d.dropna(subset=["辅导姓名"])
-    d["学部"] = d["学部"].astype(str).str.strip()
-    d["年级"] = d["年级"].astype(str).str.strip()
-    d["战队"] = d["战队"].astype(str).str.strip()
-    d["辅导姓名"] = d["辅导姓名"].astype(str).str.strip()
-    d = d[d["辅导姓名"].ne("")]
-    d["不在线时段list"] = d["不在线时段list"].fillna("").astype(str).str.strip()
-    return (
-        d.groupby(["学部", "年级", "战队", "辅导姓名"], dropna=False)["不在线时段list"]
-        .apply(lambda s: " | ".join([x for x in pd.unique(s) if x and x.lower() != "nan"]))
-        .reset_index()
-    )
-
-
 def build_pc_offline_period_map(df: pd.DataFrame) -> pd.DataFrame:
     expected = {"学部", "年级", "战队", "老师姓名", "pc不在线时段list"}
     if not expected.issubset(set(df.columns)):
@@ -555,6 +536,26 @@ def build_pc_offline_period_map(df: pd.DataFrame) -> pd.DataFrame:
     d["电脑端不在线时段list"] = d["pc不在线时段list"].fillna("").astype(str).str.strip()
     grouped = (
         d.groupby(["学部", "年级", "战队", "辅导姓名"], dropna=False)["电脑端不在线时段list"]
+        .apply(lambda s: " | ".join([x for x in pd.unique(s) if x and x.lower() != "nan"]))
+        .reset_index()
+    )
+    return grouped
+
+
+def build_mobile_offline_period_map(df: pd.DataFrame) -> pd.DataFrame:
+    expected = {"学部", "年级", "战队", "老师姓名", "app不在线时段list"}
+    if not expected.issubset(set(df.columns)):
+        return pd.DataFrame(columns=["学部", "年级", "战队", "辅导姓名", "手机端不在线时段list"])
+    d = df[["学部", "年级", "战队", "老师姓名", "app不在线时段list"]].copy()
+    d = d.dropna(subset=["老师姓名"])
+    d["学部"] = d["学部"].astype(str).str.strip()
+    d["年级"] = d["年级"].astype(str).str.strip()
+    d["战队"] = d["战队"].astype(str).str.strip()
+    d["辅导姓名"] = d["老师姓名"].astype(str).str.strip()
+    d = d[d["辅导姓名"].ne("")]
+    d["手机端不在线时段list"] = d["app不在线时段list"].fillna("").astype(str).str.strip()
+    grouped = (
+        d.groupby(["学部", "年级", "战队", "辅导姓名"], dropna=False)["手机端不在线时段list"]
         .apply(lambda s: " | ".join([x for x in pd.unique(s) if x and x.lower() != "nan"]))
         .reset_index()
     )
@@ -626,7 +627,6 @@ def main() -> None:
         sales = pd.read_excel(sales_file, sheet_name="战队汇总透视")
         bad = pd.read_excel(bad_file, sheet_name="数据透视表", header=1)
         bad_origin = pd.read_excel(bad_file, sheet_name="原表")
-        bad_sheet11 = pd.read_excel(bad_file, sheet_name="Sheet11")
 
         auth = auth.dropna(how="all")
         sales = sales.dropna(how="all")
@@ -645,17 +645,8 @@ def main() -> None:
         ].copy()
         bad = bad[bad["辅导姓名"].astype(str).str.strip().ne("")]
         bad = fill_group_cols(bad, ["学部", "年级", "战队"])
-        offline_map = build_offline_period_map(bad_sheet11)
         pc_offline_map = build_pc_offline_period_map(bad_origin)
-        if not offline_map.empty:
-            bad = bad.merge(
-                offline_map,
-                on=["学部", "年级", "战队", "辅导姓名"],
-                how="left",
-            )
-        else:
-            bad["不在线时段list"] = ""
-        bad["不在线时段list"] = bad["不在线时段list"].fillna("").astype(str)
+        mobile_offline_map = build_mobile_offline_period_map(bad_origin)
         if not pc_offline_map.empty:
             bad = bad.merge(
                 pc_offline_map,
@@ -665,6 +656,15 @@ def main() -> None:
         else:
             bad["电脑端不在线时段list"] = ""
         bad["电脑端不在线时段list"] = bad["电脑端不在线时段list"].fillna("").astype(str)
+        if not mobile_offline_map.empty:
+            bad = bad.merge(
+                mobile_offline_map,
+                on=["学部", "年级", "战队", "辅导姓名"],
+                how="left",
+            )
+        else:
+            bad["手机端不在线时段list"] = ""
+        bad["手机端不在线时段list"] = bad["手机端不在线时段list"].fillna("").astype(str)
 
         # User-specified correction: keep this team under 高二 for 高短
         if segment == "高短":
