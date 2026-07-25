@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple
 from html import escape
@@ -13,6 +14,8 @@ OUTPUT_ROOT = ROOT / "每日输出"
 INDEX_HTML = ROOT / "每日三表汇总看板.html"
 DETAIL_DIR = ROOT / "每日三表汇总看板_详情"
 TEAM_DETAIL_DIR = DETAIL_DIR / "team"
+WEEKLY_HTML = ROOT / "周维度在线率看板.html"
+HISTORY_CSV = ROOT / "dashboard_history.csv"
 
 SEGMENTS = ["初短一部", "初短二部", "小短", "高短"]
 SEGMENT_KEYS = {
@@ -127,6 +130,50 @@ def safe_text(v: object) -> str:
         return ""
     return s
 
+
+def safe_float(v: object) -> float | None:
+    if pd.isna(v) or v == "":
+        return None
+    try:
+        return float(v)
+    except Exception:
+        return None
+
+
+def parse_date_text(date_text: str) -> date:
+    try:
+        return datetime.strptime(str(date_text), "%Y-%m-%d").date()
+    except Exception:
+        return date.today()
+
+
+def update_history(history_date: date, summary_rows: List[dict]) -> pd.DataFrame:
+    rows = []
+    for row in summary_rows:
+        rows.append(
+            {
+                "date": history_date.isoformat(),
+                "segment": row["segment"],
+                "auth_rate": row.get("auth_rate_value"),
+                "online_rate": row.get("online_rate_value"),
+                "bad_count": row.get("bad_count_value"),
+            }
+        )
+    new_df = pd.DataFrame(rows)
+    if HISTORY_CSV.exists():
+        old_df = pd.read_csv(HISTORY_CSV)
+    else:
+        old_df = pd.DataFrame(columns=["date", "segment", "auth_rate", "online_rate", "bad_count"])
+    combined = new_df.copy() if old_df.empty else pd.concat([old_df, new_df], ignore_index=True)
+    combined = combined.drop_duplicates(subset=["date", "segment"], keep="last")
+    combined["date"] = combined["date"].astype(str)
+    combined["segment"] = combined["segment"].astype(str)
+    combined["auth_rate"] = pd.to_numeric(combined["auth_rate"], errors="coerce")
+    combined["online_rate"] = pd.to_numeric(combined["online_rate"], errors="coerce")
+    combined["bad_count"] = pd.to_numeric(combined["bad_count"], errors="coerce").fillna(0).astype(int)
+    combined = combined.sort_values(["date", "segment"]).reset_index(drop=True)
+    combined.to_csv(HISTORY_CSV, index=False, encoding="utf-8-sig")
+    return combined
 
 def team_page_name(segment_key: str, team_name: str) -> str:
     digest = hashlib.md5(f"{segment_key}|{team_name}".encode("utf-8")).hexdigest()[:12]
@@ -438,8 +485,15 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .team-link:hover { text-decoration: underline; color: #1d4ed8; }
 .section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
 .mini-table th, .mini-table td { font-size: 28px; }
+.nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
+.weekly-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
+.weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
+.weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
+.weekly-table th, .weekly-table td { font-size: 18px; white-space: nowrap; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
+  .weekly-grid { grid-template-columns: 1fr; }
   .main-title { font-size: 30px; }
   .sheet-table th, .sheet-table td { font-size: 20px; }
   .page { zoom: 1; }
@@ -562,6 +616,118 @@ def build_mobile_offline_period_map(df: pd.DataFrame) -> pd.DataFrame:
     return grouped
 
 
+def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
+    if history_df.empty:
+        return f"""
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>周维度在线率看板</title>
+  <style>{base_styles(scale=1.0)}</style>
+</head>
+<body>
+  <div class="page">
+    <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
+    <h1 class="dashboard-title">周维度在线率看板（郑州）</h1>
+    <div class="dashboard-sub">暂无历史数据，请先执行一次每日更新。</div>
+  </div>
+</body>
+</html>
+"""
+    df = history_df.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"])
+    if df.empty:
+        return build_weekly_page(pd.DataFrame(), today)
+
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    week_df = df[(df["date"].dt.date >= week_start) & (df["date"].dt.date <= week_end)].copy()
+    if week_df.empty:
+        recent_start = today - timedelta(days=6)
+        week_df = df[df["date"].dt.date >= recent_start].copy()
+    week_df["date_text"] = week_df["date"].dt.strftime("%Y-%m-%d")
+
+    seg_cards = []
+    for seg in SEGMENTS:
+        seg_df = week_df[week_df["segment"] == seg]
+        if seg_df.empty:
+            seg_cards.append(
+                f'<div class="weekly-card"><div class="weekly-seg">{seg}</div><div class="weekly-kpi">本周暂无数据</div></div>'
+            )
+            continue
+        auth_avg = seg_df["auth_rate"].mean()
+        online_avg = seg_df["online_rate"].mean()
+        bad_sum = int(seg_df["bad_count"].sum())
+        seg_cards.append(
+            f"""
+<div class="weekly-card">
+  <div class="weekly-seg">{seg}</div>
+  <div class="weekly-kpi">本周平均授权率：{safe_pct(auth_avg)}</div>
+  <div class="weekly-kpi">本周平均在线率：{safe_pct(online_avg)}</div>
+  <div class="weekly-kpi">本周累计不在线人数：{bad_sum}</div>
+</div>
+"""
+        )
+
+    pivot_rows = []
+    recent = week_df.sort_values("date").drop_duplicates(["date_text", "segment"], keep="last")
+    for d in sorted(recent["date_text"].unique()):
+        ddf = recent[recent["date_text"] == d]
+        seg_map = {r["segment"]: r for _, r in ddf.iterrows()}
+        row = [f"<td>{d}</td>"]
+        for seg in SEGMENTS:
+            r = seg_map.get(seg)
+            if r is None:
+                row.append("<td>#N/A</td><td>#N/A</td><td>#N/A</td>")
+            else:
+                row.append(
+                    f"<td>{safe_pct(r['auth_rate'])}</td><td>{safe_pct(r['online_rate'])}</td><td>{safe_int(r['bad_count'])}</td>"
+                )
+        pivot_rows.append(f"<tr>{''.join(row)}</tr>")
+
+    seg_headers = "".join([f"<th colspan='3'>{seg}</th>" for seg in SEGMENTS])
+    sub_headers = "".join(["<th>授权率</th><th>在线率</th><th>不在线人数</th>" for _ in SEGMENTS])
+    subtitle = f"{week_start.isoformat()} ~ {week_end.isoformat()}（周维度）"
+    return f"""
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>周维度在线率看板</title>
+  <style>{base_styles(scale=1.0)}</style>
+</head>
+<body>
+  <div class="page">
+    <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
+    <h1 class="dashboard-title">周维度在线率看板（郑州）</h1>
+    <div class="dashboard-sub">{subtitle}</div>
+    <section class="weekly-grid">
+      {''.join(seg_cards)}
+    </section>
+    <table class="sheet-table weekly-table">
+      <thead>
+        <tr><th rowspan="2">日期</th>{seg_headers}</tr>
+        <tr>{sub_headers}</tr>
+      </thead>
+      <tbody>
+        {''.join(pivot_rows)}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
+"""
+
+
+def write_weekly_dashboard(history_df: pd.DataFrame, date_text: str) -> None:
+    page_date = parse_date_text(date_text) if date_text else date.today()
+    WEEKLY_HTML.write_text(build_weekly_page(history_df, page_date), encoding="utf-8")
+
+
 def build_index_page(summary_rows: List[dict], date_text: str) -> str:
     segment_html = []
     for row in summary_rows:
@@ -604,6 +770,16 @@ def build_index_page(summary_rows: List[dict], date_text: str) -> str:
   <div class="page">
     <h1 class="dashboard-title">每日三表汇总看板（郑州）</h1>
     <div class="dashboard-sub">{date_text}｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
+    <section class="segment-block">
+      <h2 class="segment-name">周汇总入口</h2>
+      <div class="cards">
+        <a class="card-link card-online" href="周维度在线率看板.html">
+          <div class="card-label">周维度在线率看板</div>
+          <div class="card-value">查看本周汇总</div>
+          <div class="card-sub">点击进入：按学部分组的周指标汇总与日趋势表</div>
+        </a>
+      </div>
+    </section>
     {''.join(segment_html)}
   </div>
 </body>
@@ -701,22 +877,27 @@ def main() -> None:
         auth_sum = pick_overall_summary_row(auth, "接流")
         sales_sum = pick_overall_summary_row(sales, "接流人数")
 
-        auth_rate = safe_pct(auth_sum["爱芯个微授权率"]) if auth_sum is not None else "#N/A"
+        auth_rate_value = safe_float(auth_sum["爱芯个微授权率"]) if auth_sum is not None else None
+        auth_rate = safe_pct(auth_rate_value) if auth_rate_value is not None else "#N/A"
         if sales_sum is not None:
             total = pd.to_numeric(sales_sum["接流人数"], errors="coerce")
             pc = pd.to_numeric(sales_sum["电脑端全天在线人数"], errors="coerce")
             mobile = pd.to_numeric(sales_sum["手机端全天在线人数"], errors="coerce")
             if pd.notna(total) and total and pd.notna(pc) and pd.notna(mobile):
                 online = (float(pc) + float(mobile)) / (2 * float(total))
-                online_rate = safe_pct(online)
+                online_rate_value = online
+                online_rate = safe_pct(online_rate_value)
             else:
+                online_rate_value = None
                 online_rate = "#N/A"
             online_sub = f"电脑端：{safe_pct(sales_sum['电脑端全天在线率'])}｜手机端：{safe_pct(sales_sum['手机端全天在线率'])}"
         else:
+            online_rate_value = None
             online_rate = "#N/A"
             online_sub = "电脑端：#N/A｜手机端：#N/A"
 
-        bad_count = str(len(bad))
+        bad_count_value = int(len(bad))
+        bad_count = str(bad_count_value)
 
         summary_rows.append(
             {
@@ -725,6 +906,9 @@ def main() -> None:
                 "online_rate": online_rate,
                 "online_sub": online_sub,
                 "bad_count": bad_count,
+                "auth_rate_value": auth_rate_value,
+                "online_rate_value": online_rate_value,
+                "bad_count_value": bad_count_value,
             }
         )
 
@@ -765,8 +949,12 @@ def main() -> None:
 
     date_text = max(all_dates) if all_dates else ""
     INDEX_HTML.write_text(build_index_page(summary_rows, date_text), encoding="utf-8")
+    history_df = update_history(parse_date_text(date_text) if date_text else date.today(), summary_rows)
+    write_weekly_dashboard(history_df, date_text)
     print(f"Generated: {INDEX_HTML}")
+    print(f"Generated: {WEEKLY_HTML}")
     print(f"Detail pages: {DETAIL_DIR}")
+    print(f"History file: {HISTORY_CSV}")
     print("[校验] 每日检查完成：已完成各学部三表数据重建与高短年级合法性检查。")
 
 

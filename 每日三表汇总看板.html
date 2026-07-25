@@ -41,8 +41,15 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .team-link:hover { text-decoration: underline; color: #1d4ed8; }
 .section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
 .mini-table th, .mini-table td { font-size: 28px; }
+.nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
+.weekly-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
+.weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
+.weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
+.weekly-table th, .weekly-table td { font-size: 18px; white-space: nowrap; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
+  .weekly-grid { grid-template-columns: 1fr; }
   .main-title { font-size: 30px; }
   .sheet-table th, .sheet-table td { font-size: 20px; }
   .page { zoom: 1; }
@@ -53,6 +60,16 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
   <div class="page">
     <h1 class="dashboard-title">每日三表汇总看板（郑州）</h1>
     <div class="dashboard-sub">2026-07-24｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
+    <section class="segment-block">
+      <h2 class="segment-name">周汇总入口</h2>
+      <div class="cards">
+        <a class="card-link card-online" href="周维度在线率看板.html">
+          <div class="card-label">周维度在线率看板</div>
+          <div class="card-value">查看本周汇总</div>
+          <div class="card-sub">点击进入：按学部分组的周指标汇总与日趋势表</div>
+        </a>
+      </div>
+    </section>
     
 <section class="segment-block">
   <h2 class="segment-name">初短一部</h2>
