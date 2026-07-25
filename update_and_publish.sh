@@ -73,6 +73,14 @@ echo "授权(高中)源文件: $AUTH_HIGH_FILE"
 echo "授权(爱学)源文件: $AUTH_AIXUE_FILE"
 echo "个微在线源文件: $WECHAT_FILE"
 
+echo "== Preflight: git working tree check =="
+if [[ "$DRY_RUN" == "1" ]]; then
+  echo "[DRY_RUN] cd \"$ROOT_DIR\" && git status -sb"
+else
+  cd "$ROOT_DIR"
+  git status -sb
+fi
+
 echo "== Step 1: regenerate daily excel reports =="
 run_cmd "cd \"$ROOT_DIR\" && python3 \"generate_daily_reports.py\" \
   --sales \"$SALES_FILE\" \
@@ -104,3 +112,17 @@ fi
 
 echo "== Done =="
 echo "固定链接: https://fengling-dashboard.netlify.app"
+
+echo "== Post-check: remaining local changes =="
+if [[ "$DRY_RUN" == "1" ]]; then
+  echo "[DRY_RUN] cd \"$ROOT_DIR\" && git status --porcelain"
+else
+  cd "$ROOT_DIR"
+  if [[ -n "$(git status --porcelain)" ]]; then
+    echo "[提醒] 仍有未提交改动，线上可能不是最新："
+    git status -sb
+    echo "[建议] 如需同步这些改动，请执行：git add ... && git commit && git -c http.version=HTTP/1.1 push"
+  else
+    echo "[OK] 本地工作区干净，线上与本次提交保持一致。"
+  fi
+fi
