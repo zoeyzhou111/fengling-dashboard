@@ -18,15 +18,19 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .sheet-table .header-orange { background: #f59e0b; color: #fff; }
 .left-group { background: #fbe7cf; font-weight: 800; }
 .summary-row { background: #d9e7f7; font-weight: 800; }
-.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #1f8a3d; }
+.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #111827; }
 .rate-yellow { background: linear-gradient(90deg, #fde89f 0%, #fff9ea 100%); font-weight: 800; }
-.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #0f9d58; }
+.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #111827; }
 .rate-mint { background: linear-gradient(90deg, #b7f0df 0%, #f5fffb 100%); font-weight: 800; }
-.rate-low { color: #b91c1c !important; }
-.rate-warn { background: #f8c9d2; color: #b91c1c; font-weight: 800; }
+.rate-low { color: #b91c1c !important; background-image: none !important; background-color: #fee2e2 !important; }
+.rate-high { color: #15803d !important; background-image: none !important; background-color: #dcfce7 !important; }
 .dashboard-title { text-align: center; color: #6d28d9; font-size: 34px; margin: 8px 0 18px; }
 .dashboard-sub { text-align: center; color: #6b7280; margin-bottom: 18px; font-size: 18px; }
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
+.segment-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #06b6d4; }
+.segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .card-link { text-decoration: none; color: inherit; display: block; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; padding: 12px; transition: .2s; min-height: 134px; }
@@ -47,9 +51,14 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
 .weekly-table th, .weekly-table td { font-size: 18px; white-space: nowrap; }
+.chart-grid { display: grid; grid-template-columns: 2fr 2fr 1.4fr; gap: 12px; margin: 12px 0 16px; }
+.chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
+.chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
+.weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
   .weekly-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
   .main-title { font-size: 30px; }
   .sheet-table th, .sheet-table td { font-size: 20px; }
   .page { zoom: 1; }
@@ -67,7 +76,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
         </tr>
       </thead>
       <tbody>
-        <tr><td rowspan="13" class="left-group">小学</td><td rowspan="13" class="left-group">全年级</td><td rowspan="7" class="left-group"><a class="team-link" href="team/xiaoduan_d85a22f13e31.html">仵夏炎战队</a></td><td>仵夏炎</td><td class="">100.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td>王常菲</td><td class=" rate-warn">0.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td>王欣冉</td><td class="">100.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td>秦淑楠</td><td class=" rate-warn">0.00%</td><td class=" rate-warn">0.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td>荆雅博</td><td class="">100.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td>裴芳</td><td class="">100.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td>陈湘茹</td><td class="">100.00%</td><td class=" rate-warn">77.78%</td><td class="">100.00%</td></tr><tr><td rowspan="2" class="left-group"><a class="team-link" href="team/xiaoduan_eaae8ccc97d0.html">吕志恒战队</a></td><td>刘栋辉</td><td class=" rate-warn">0.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td>张碧玉</td><td class=" rate-warn">0.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td rowspan="1" class="left-group"><a class="team-link" href="team/xiaoduan_b3f3696c5a2f.html">李丹阳战队</a></td><td>张亚丽</td><td class="">100.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td rowspan="1" class="left-group"><a class="team-link" href="team/xiaoduan_660ed4c4f98a.html">李少辉战队</a></td><td>李少辉</td><td class=" rate-warn">66.67%</td><td class=" rate-warn">94.44%</td><td class=" rate-warn">66.67%</td></tr><tr><td rowspan="2" class="left-group"><a class="team-link" href="team/xiaoduan_ffe0eea568e3.html">王梦迪战队</a></td><td>张昱莹</td><td class=" rate-warn">0.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr><tr><td>王梦迪</td><td class="">100.00%</td><td class="">100.00%</td><td class=" rate-warn">0.00%</td></tr>
+        <tr><td rowspan="13" class="left-group">小学</td><td rowspan="13" class="left-group">全年级</td><td rowspan="7" class="left-group"><a class="team-link" href="team/xiaoduan_d85a22f13e31.html">仵夏炎战队</a></td><td>仵夏炎</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td>王常菲</td><td class="rate-yellow rate-low">0.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td>王欣冉</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td>秦淑楠</td><td class="rate-yellow rate-low">0.00%</td><td class="rate-yellow rate-low">0.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td>荆雅博</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td>裴芳</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td>陈湘茹</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow">77.78%</td><td class="rate-yellow rate-high">100.00%</td></tr><tr><td rowspan="2" class="left-group"><a class="team-link" href="team/xiaoduan_eaae8ccc97d0.html">吕志恒战队</a></td><td>刘栋辉</td><td class="rate-yellow rate-low">0.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td>张碧玉</td><td class="rate-yellow rate-low">0.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td rowspan="1" class="left-group"><a class="team-link" href="team/xiaoduan_b3f3696c5a2f.html">李丹阳战队</a></td><td>张亚丽</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td rowspan="1" class="left-group"><a class="team-link" href="team/xiaoduan_660ed4c4f98a.html">李少辉战队</a></td><td>李少辉</td><td class="rate-yellow">66.67%</td><td class="rate-yellow rate-high">94.44%</td><td class="rate-yellow">66.67%</td></tr><tr><td rowspan="2" class="left-group"><a class="team-link" href="team/xiaoduan_ffe0eea568e3.html">王梦迪战队</a></td><td>张昱莹</td><td class="rate-yellow rate-low">0.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr><tr><td>王梦迪</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-high">100.00%</td><td class="rate-yellow rate-low">0.00%</td></tr>
       </tbody>
     </table>
   </div>

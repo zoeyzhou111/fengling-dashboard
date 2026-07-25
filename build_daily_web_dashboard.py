@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -140,6 +141,17 @@ def safe_float(v: object) -> float | None:
         return None
 
 
+def rate_level_class(v: object) -> str:
+    fv = safe_float(v)
+    if fv is None:
+        return ""
+    if fv < 0.5:
+        return " rate-low"
+    if fv > 0.8:
+        return " rate-high"
+    return ""
+
+
 def parse_date_text(date_text: str) -> date:
     try:
         return datetime.strptime(str(date_text), "%Y-%m-%d").date()
@@ -265,12 +277,8 @@ def auth_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: s
                 if "率" in c:
                     txt = safe_pct(val)
                     rate_cls = "rate-blue" if c == "个微全天在线率" else ("rate-green" if c == "爱芯个微授权率" else "rate-mint")
-                    low_cls = ""
-                    try:
-                        low_cls = " rate-low" if float(val) < 0.6 else ""
-                    except Exception:
-                        pass
-                    tds.append(f'<td class="{rate_cls}{low_cls} {cls}">{txt}</td>')
+                    band_cls = rate_level_class(val)
+                    tds.append(f'<td class="{rate_cls}{band_cls} {cls}">{txt}</td>')
                 elif c == "战队":
                     if summary:
                         tds.append(f'<td class="{cls}">{safe_text(val)}</td>')
@@ -329,13 +337,9 @@ def sales_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: 
                     continue
             elif "率" in c:
                 txt = safe_pct(row[c])
-                low_cls = ""
-                try:
-                    low_cls = " rate-low" if float(row[c]) < 0.6 else ""
-                except Exception:
-                    pass
+                band_cls = rate_level_class(row[c])
                 rate_cls = "rate-blue" if "电脑" in c else "rate-yellow"
-                tds.append(f'<td class="{rate_cls}{low_cls} {cls}">{txt}</td>')
+                tds.append(f'<td class="{rate_cls}{band_cls} {cls}">{txt}</td>')
             elif c == "战队":
                 if summary:
                     tds.append(f'<td class="{cls}">{safe_text(row[c])}</td>')
@@ -409,12 +413,8 @@ def bad_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: st
                 if pd.isna(val) or val == "":
                     val = 0
                 txt = safe_pct(val)
-                warn_cls = ""
-                try:
-                    warn_cls = " rate-warn" if float(val) < 1 else ""
-                except Exception:
-                    warn_cls = " rate-warn"
-                tds.append(f'<td class="{warn_cls}">{txt}</td>')
+                band_cls = rate_level_class(val)
+                tds.append(f'<td class="rate-yellow{band_cls}">{txt}</td>')
             else:
                 tds.append(f"<td>{row[c]}</td>")
         rows.append(f"<tr>{''.join(tds)}</tr>")
@@ -462,15 +462,19 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .sheet-table .header-orange { background: #f59e0b; color: #fff; }
 .left-group { background: #fbe7cf; font-weight: 800; }
 .summary-row { background: #d9e7f7; font-weight: 800; }
-.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #1f8a3d; }
+.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #111827; }
 .rate-yellow { background: linear-gradient(90deg, #fde89f 0%, #fff9ea 100%); font-weight: 800; }
-.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #0f9d58; }
+.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #111827; }
 .rate-mint { background: linear-gradient(90deg, #b7f0df 0%, #f5fffb 100%); font-weight: 800; }
-.rate-low { color: #b91c1c !important; }
-.rate-warn { background: #f8c9d2; color: #b91c1c; font-weight: 800; }
+.rate-low { color: #b91c1c !important; background-image: none !important; background-color: #fee2e2 !important; }
+.rate-high { color: #15803d !important; background-image: none !important; background-color: #dcfce7 !important; }
 .dashboard-title { text-align: center; color: #6d28d9; font-size: 34px; margin: 8px 0 18px; }
 .dashboard-sub { text-align: center; color: #6b7280; margin-bottom: 18px; font-size: 18px; }
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
+.segment-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #06b6d4; }
+.segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .card-link { text-decoration: none; color: inherit; display: block; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; padding: 12px; transition: .2s; min-height: 134px; }
@@ -491,9 +495,14 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
 .weekly-table th, .weekly-table td { font-size: 18px; white-space: nowrap; }
+.chart-grid { display: grid; grid-template-columns: 2fr 2fr 1.4fr; gap: 12px; margin: 12px 0 16px; }
+.chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
+.chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
+.weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
   .weekly-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
   .main-title { font-size: 30px; }
   .sheet-table th, .sheet-table td { font-size: 20px; }
   .page { zoom: 1; }
@@ -525,7 +534,8 @@ def render_team_table(df: pd.DataFrame, cols: List[str], rate_cols: List[str], t
                     cls = "rate-green"
                 if "功能" in c:
                     cls = "rate-mint"
-                tds.append(f'<td class="{cls}">{txt}</td>')
+                band_cls = rate_level_class(v)
+                tds.append(f'<td class="{cls}{band_cls}">{txt}</td>')
             elif c in {"学部", "年级", "战队", "辅导姓名", "电脑端不在线时段list", "手机端不在线时段list"}:
                 tds.append(f"<td>{escape(safe_text(v))}</td>")
             else:
@@ -644,10 +654,8 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
 
     week_start = today - timedelta(days=today.weekday())
     week_end = week_start + timedelta(days=6)
+    labels = [(week_start + timedelta(days=i)).isoformat() for i in range(7)]
     week_df = df[(df["date"].dt.date >= week_start) & (df["date"].dt.date <= week_end)].copy()
-    if week_df.empty:
-        recent_start = today - timedelta(days=6)
-        week_df = df[df["date"].dt.date >= recent_start].copy()
     week_df["date_text"] = week_df["date"].dt.strftime("%Y-%m-%d")
 
     seg_cards = []
@@ -672,9 +680,34 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
 """
         )
 
+    online_datasets = []
+    auth_datasets = []
+    pie_labels = []
+    pie_values = []
+    seg_colors = {
+        "初短一部": "#3b82f6",
+        "初短二部": "#8b5cf6",
+        "小短": "#06b6d4",
+        "高短": "#f97316",
+    }
+    for seg in SEGMENTS:
+        seg_df = week_df[week_df["segment"] == seg]
+        seg_map_online = {r["date_text"]: safe_float(r["online_rate"]) for _, r in seg_df.iterrows()}
+        seg_map_auth = {r["date_text"]: safe_float(r["auth_rate"]) for _, r in seg_df.iterrows()}
+        online_vals = [round((seg_map_online.get(d) or 0) * 100, 2) for d in labels]
+        auth_vals = [round((seg_map_auth.get(d) or 0) * 100, 2) for d in labels]
+        online_datasets.append(
+            {"label": seg, "data": online_vals, "borderColor": seg_colors.get(seg, "#334155"), "backgroundColor": seg_colors.get(seg, "#334155"), "tension": 0.25}
+        )
+        auth_datasets.append(
+            {"label": seg, "data": auth_vals, "borderColor": seg_colors.get(seg, "#334155"), "backgroundColor": seg_colors.get(seg, "#334155"), "tension": 0.25}
+        )
+        pie_labels.append(seg)
+        pie_values.append(int(seg_df["bad_count"].sum()) if not seg_df.empty else 0)
+
     pivot_rows = []
     recent = week_df.sort_values("date").drop_duplicates(["date_text", "segment"], keep="last")
-    for d in sorted(recent["date_text"].unique()):
+    for d in labels:
         ddf = recent[recent["date_text"] == d]
         seg_map = {r["segment"]: r for _, r in ddf.iterrows()}
         row = [f"<td>{d}</td>"]
@@ -683,8 +716,10 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
             if r is None:
                 row.append("<td>#N/A</td><td>#N/A</td><td>#N/A</td>")
             else:
+                auth_cls = rate_level_class(r["auth_rate"])
+                online_cls = rate_level_class(r["online_rate"])
                 row.append(
-                    f"<td>{safe_pct(r['auth_rate'])}</td><td>{safe_pct(r['online_rate'])}</td><td>{safe_int(r['bad_count'])}</td>"
+                    f"<td class='rate-green{auth_cls}'>{safe_pct(r['auth_rate'])}</td><td class='rate-blue{online_cls}'>{safe_pct(r['online_rate'])}</td><td>{safe_int(r['bad_count'])}</td>"
                 )
         pivot_rows.append(f"<tr>{''.join(row)}</tr>")
 
@@ -708,6 +743,20 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     <section class="weekly-grid">
       {''.join(seg_cards)}
     </section>
+    <section class="chart-grid">
+      <div class="chart-card">
+        <h3 class="chart-title">本周在线率趋势（%）</h3>
+        <canvas id="onlineTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">本周授权率趋势（%）</h3>
+        <canvas id="authTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">本周不在线人数占比</h3>
+        <canvas id="badPie"></canvas>
+      </div>
+    </section>
     <table class="sheet-table weekly-table">
       <thead>
         <tr><th rowspan="2">日期</th>{seg_headers}</tr>
@@ -718,6 +767,34 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
       </tbody>
     </table>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const labels = {json.dumps(labels, ensure_ascii=False)};
+    const onlineDatasets = {json.dumps(online_datasets, ensure_ascii=False)};
+    const authDatasets = {json.dumps(auth_datasets, ensure_ascii=False)};
+    const pieLabels = {json.dumps(pie_labels, ensure_ascii=False)};
+    const pieValues = {json.dumps(pie_values, ensure_ascii=False)};
+    const commonOptions = {{
+      responsive: true,
+      plugins: {{ legend: {{ position: 'bottom' }} }},
+      scales: {{ y: {{ min: 0, max: 100 }} }}
+    }};
+    new Chart(document.getElementById('onlineTrend'), {{
+      type: 'line',
+      data: {{ labels, datasets: onlineDatasets }},
+      options: commonOptions
+    }});
+    new Chart(document.getElementById('authTrend'), {{
+      type: 'line',
+      data: {{ labels, datasets: authDatasets }},
+      options: commonOptions
+    }});
+    new Chart(document.getElementById('badPie'), {{
+      type: 'pie',
+      data: {{ labels: pieLabels, datasets: [{{ data: pieValues, backgroundColor: ['#3b82f6','#8b5cf6','#06b6d4','#f97316'] }}] }},
+      options: {{ responsive: true, plugins: {{ legend: {{ position: 'bottom' }} }} }}
+    }});
+  </script>
 </body>
 </html>
 """
@@ -730,12 +807,19 @@ def write_weekly_dashboard(history_df: pd.DataFrame, date_text: str) -> None:
 
 def build_index_page(summary_rows: List[dict], date_text: str) -> str:
     segment_html = []
+    class_map = {
+        "初短一部": "segment-chuduan1",
+        "初短二部": "segment-chuduan2",
+        "小短": "segment-xiaoduan",
+        "高短": "segment-gaoduan",
+    }
     for row in summary_rows:
         segment = row["segment"]
         key = SEGMENT_KEYS[segment]
+        seg_cls = class_map.get(segment, "")
         segment_html.append(
             f"""
-<section class="segment-block">
+<section class="segment-block {seg_cls}">
   <h2 class="segment-name">{segment}</h2>
   <div class="cards">
     <a class="card-link card-auth" href="每日三表汇总看板_详情/{key}_auth.html">
@@ -770,17 +854,17 @@ def build_index_page(summary_rows: List[dict], date_text: str) -> str:
   <div class="page">
     <h1 class="dashboard-title">每日三表汇总看板（郑州）</h1>
     <div class="dashboard-sub">{date_text}｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
-    <section class="segment-block">
-      <h2 class="segment-name">周汇总入口</h2>
+    {''.join(segment_html)}
+    <section class="segment-block weekly-entry">
+      <h2 class="segment-name">周汇总入口（周一至周日）</h2>
       <div class="cards">
         <a class="card-link card-online" href="周维度在线率看板.html">
           <div class="card-label">周维度在线率看板</div>
           <div class="card-value">查看本周汇总</div>
-          <div class="card-sub">点击进入：按学部分组的周指标汇总与日趋势表</div>
+          <div class="card-sub">折线图 + 饼图 + 周指标表（按学部分组）</div>
         </a>
       </div>
     </section>
-    {''.join(segment_html)}
   </div>
 </body>
 </html>

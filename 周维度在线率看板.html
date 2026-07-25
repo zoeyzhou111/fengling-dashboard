@@ -18,15 +18,19 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .sheet-table .header-orange { background: #f59e0b; color: #fff; }
 .left-group { background: #fbe7cf; font-weight: 800; }
 .summary-row { background: #d9e7f7; font-weight: 800; }
-.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #1f8a3d; }
+.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #111827; }
 .rate-yellow { background: linear-gradient(90deg, #fde89f 0%, #fff9ea 100%); font-weight: 800; }
-.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #0f9d58; }
+.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #111827; }
 .rate-mint { background: linear-gradient(90deg, #b7f0df 0%, #f5fffb 100%); font-weight: 800; }
-.rate-low { color: #b91c1c !important; }
-.rate-warn { background: #f8c9d2; color: #b91c1c; font-weight: 800; }
+.rate-low { color: #b91c1c !important; background-image: none !important; background-color: #fee2e2 !important; }
+.rate-high { color: #15803d !important; background-image: none !important; background-color: #dcfce7 !important; }
 .dashboard-title { text-align: center; color: #6d28d9; font-size: 34px; margin: 8px 0 18px; }
 .dashboard-sub { text-align: center; color: #6b7280; margin-bottom: 18px; font-size: 18px; }
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
+.segment-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #06b6d4; }
+.segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .card-link { text-decoration: none; color: inherit; display: block; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; padding: 12px; transition: .2s; min-height: 134px; }
@@ -47,9 +51,14 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
 .weekly-table th, .weekly-table td { font-size: 18px; white-space: nowrap; }
+.chart-grid { display: grid; grid-template-columns: 2fr 2fr 1.4fr; gap: 12px; margin: 12px 0 16px; }
+.chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
+.chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
+.weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
   .weekly-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
   .main-title { font-size: 30px; }
   .sheet-table th, .sheet-table td { font-size: 20px; }
   .page { zoom: 1; }
@@ -92,15 +101,57 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 </div>
 
     </section>
+    <section class="chart-grid">
+      <div class="chart-card">
+        <h3 class="chart-title">本周在线率趋势（%）</h3>
+        <canvas id="onlineTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">本周授权率趋势（%）</h3>
+        <canvas id="authTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">本周不在线人数占比</h3>
+        <canvas id="badPie"></canvas>
+      </div>
+    </section>
     <table class="sheet-table weekly-table">
       <thead>
         <tr><th rowspan="2">日期</th><th colspan='3'>初短一部</th><th colspan='3'>初短二部</th><th colspan='3'>小短</th><th colspan='3'>高短</th></tr>
         <tr><th>授权率</th><th>在线率</th><th>不在线人数</th><th>授权率</th><th>在线率</th><th>不在线人数</th><th>授权率</th><th>在线率</th><th>不在线人数</th><th>授权率</th><th>在线率</th><th>不在线人数</th></tr>
       </thead>
       <tbody>
-        <tr><td>2026-07-24</td><td>60.89%</td><td>59.56%</td><td>182</td><td>90.00%</td><td>60.00%</td><td>146</td><td>80.95%</td><td>69.05%</td><td>13</td><td>84.92%</td><td>75.00%</td><td>77</td></tr>
+        <tr><td>2026-07-20</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-21</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-22</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-23</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-24</td><td class='rate-green'>60.89%</td><td class='rate-blue'>59.56%</td><td>182</td><td class='rate-green rate-high'>90.00%</td><td class='rate-blue'>60.00%</td><td>146</td><td class='rate-green rate-high'>80.95%</td><td class='rate-blue'>69.05%</td><td>13</td><td class='rate-green rate-high'>84.92%</td><td class='rate-blue'>75.00%</td><td>77</td></tr><tr><td>2026-07-25</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-26</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr>
       </tbody>
     </table>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const labels = ["2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26"];
+    const onlineDatasets = [{"label": "初短一部", "data": [0, 0, 0, 0, 59.56, 0, 0], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "tension": 0.25}, {"label": "初短二部", "data": [0, 0, 0, 0, 60.0, 0, 0], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [0, 0, 0, 0, 69.05, 0, 0], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "tension": 0.25}, {"label": "高短", "data": [0, 0, 0, 0, 75.0, 0, 0], "borderColor": "#f97316", "backgroundColor": "#f97316", "tension": 0.25}];
+    const authDatasets = [{"label": "初短一部", "data": [0, 0, 0, 0, 60.89, 0, 0], "borderColor": "#3b82f6", "backgroundColor": "#3b82f6", "tension": 0.25}, {"label": "初短二部", "data": [0, 0, 0, 0, 90.0, 0, 0], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [0, 0, 0, 0, 80.95, 0, 0], "borderColor": "#06b6d4", "backgroundColor": "#06b6d4", "tension": 0.25}, {"label": "高短", "data": [0, 0, 0, 0, 84.92, 0, 0], "borderColor": "#f97316", "backgroundColor": "#f97316", "tension": 0.25}];
+    const pieLabels = ["初短一部", "初短二部", "小短", "高短"];
+    const pieValues = [182, 146, 13, 77];
+    const commonOptions = {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { min: 0, max: 100 } }
+    };
+    new Chart(document.getElementById('onlineTrend'), {
+      type: 'line',
+      data: { labels, datasets: onlineDatasets },
+      options: commonOptions
+    });
+    new Chart(document.getElementById('authTrend'), {
+      type: 'line',
+      data: { labels, datasets: authDatasets },
+      options: commonOptions
+    });
+    new Chart(document.getElementById('badPie'), {
+      type: 'pie',
+      data: { labels: pieLabels, datasets: [{ data: pieValues, backgroundColor: ['#3b82f6','#8b5cf6','#06b6d4','#f97316'] }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  </script>
 </body>
 </html>
