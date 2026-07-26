@@ -244,12 +244,20 @@ def team_page_name(segment_key: str, team_name: str) -> str:
     return f"{segment_key}_{digest}.html"
 
 
-def link_team(segment_key: str, team_name: object, href_prefix: str = "team/") -> str:
+def link_team(
+    segment_key: str,
+    team_name: object,
+    href_prefix: str = "team/",
+    from_page: str | None = None,
+) -> str:
     team_text = safe_text(team_name)
     if not team_text:
         return ""
     file_name = team_page_name(segment_key, team_text)
-    return f'<a class="team-link" href="{href_prefix}{file_name}">{escape(team_text)}</a>'
+    href = f"{href_prefix}{file_name}"
+    if from_page:
+        href = f"{href}?from={from_page}"
+    return f'<a class="team-link" href="{href}">{escape(team_text)}</a>'
 
 
 def is_summary_row(series: pd.Series) -> bool:
@@ -335,7 +343,7 @@ def auth_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: s
                     if summary:
                         tds.append(f'<td class="{cls}">{safe_text(val)}</td>')
                     else:
-                        tds.append(f'<td class="{cls}">{link_team(segment_key, val)}</td>')
+                        tds.append(f'<td class="{cls}">{link_team(segment_key, val, from_page="auth")}</td>')
                 else:
                     tds.append(f'<td class="{cls}">{safe_int(val)}</td>')
         rows.append(f"<tr>{''.join(tds)}</tr>")
@@ -396,7 +404,7 @@ def sales_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: 
                 if summary:
                     tds.append(f'<td class="{cls}">{safe_text(row[c])}</td>')
                 else:
-                    tds.append(f'<td class="{cls}">{link_team(segment_key, row[c])}</td>')
+                    tds.append(f'<td class="{cls}">{link_team(segment_key, row[c], from_page="sales")}</td>')
             else:
                 tds.append(f'<td class="{cls}">{safe_int(row[c])}</td>')
         rows.append(f"<tr>{''.join(tds)}</tr>")
@@ -454,7 +462,7 @@ def bad_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: st
             if c in {"学部", "年级", "战队"}:
                 if (i, c) in spans:
                     if c == "战队":
-                        team_html = link_team(segment_key, row[c])
+                        team_html = link_team(segment_key, row[c], from_page="bad")
                         tds.append(f'<td rowspan="{spans[(i, c)]}" class="left-group">{team_html}</td>')
                     else:
                         tds.append(f'<td rowspan="{spans[(i, c)]}" class="left-group">{safe_text(row[c])}</td>')
@@ -637,12 +645,33 @@ def team_detail_html(
 </head>
 <body>
   <div class="page">
-    <a class="back-link" href="../{segment_key}_auth.html">← 返回{segment}明细页</a>
+    <a id="backLink" class="back-link" href="../{segment_key}_auth.html">← 返回{segment}个微授权明细</a>
     <h1 class="main-title">{escape(segment)}｜{escape(team_name)} 战队明细（{escape(date_text)}）</h1>
     {render_team_table(auth_df, auth_cols, ["个微全天在线率", "爱芯个微授权率", "个微功能正常率"], "个微&授权明细")}
     {render_team_table(sales_df, sales_cols, ["电脑端全天在线率", "手机端全天在线率"], "企微在线明细")}
     {render_team_table(roster_df, roster_cols, ["企微-手机在线率", "企微-电脑在线率", "个微在线率"], "全量接流名单明细")}
   </div>
+  <script>
+    (function() {{
+      var from = new URLSearchParams(window.location.search).get("from");
+      var map = {{
+        auth: "../{segment_key}_auth.html",
+        sales: "../{segment_key}_sales.html",
+        bad: "../{segment_key}_bad.html"
+      }};
+      var labelMap = {{
+        auth: "← 返回{escape(segment)}个微授权明细",
+        sales: "← 返回{escape(segment)}企微在线明细",
+        bad: "← 返回{escape(segment)}未达标名单"
+      }};
+      var key = map[from] ? from : "auth";
+      var back = document.getElementById("backLink");
+      if (back) {{
+        back.setAttribute("href", map[key]);
+        back.textContent = labelMap[key];
+      }}
+    }})();
+  </script>
 </body>
 </html>
 """
@@ -988,6 +1017,7 @@ def main() -> None:
         bad_file = seg_dir / f"郑州-{segment}-每日风灵不在线.xlsx"
 
         auth = pd.read_excel(auth_file, sheet_name="数据公示表", header=1)
+        gwei_origin = pd.read_excel(auth_file, sheet_name="个微在线源数据")
         sales = pd.read_excel(sales_file, sheet_name="战队汇总透视")
         sales_origin = pd.read_excel(sales_file, sheet_name="销售风灵在线率明细数据")
         bad = pd.read_excel(bad_file, sheet_name="数据透视表", header=1)
@@ -1064,6 +1094,29 @@ def main() -> None:
         roster = roster[roster["战队"].ne("") & roster["战队"].str.lower().ne("nan")].copy()
         roster["手机端不在线时段list"] = roster["手机端不在线时段list"].fillna("").astype(str).str.strip()
         roster["电脑端不在线时段list"] = roster["电脑端不在线时段list"].fillna("").astype(str).str.strip()
+        if {"学部", "年级", "战队", "辅导姓名", "风灵微信在线率"}.issubset(set(gwei_origin.columns)):
+            gwei_detail = gwei_origin[["学部", "年级", "战队", "辅导姓名", "风灵微信在线率"]].copy()
+            gwei_detail = gwei_detail.dropna(how="all")
+            gwei_detail["辅导姓名"] = gwei_detail["辅导姓名"].fillna("").astype(str).str.strip()
+            gwei_detail = gwei_detail[gwei_detail["辅导姓名"].ne("")]
+            gwei_detail = fill_group_cols(gwei_detail, ["学部", "年级", "战队"])
+            for c in ["学部", "年级", "战队", "辅导姓名"]:
+                gwei_detail[c] = gwei_detail[c].fillna("").astype(str).str.strip()
+            gwei_detail["风灵微信在线率"] = pd.to_numeric(gwei_detail["风灵微信在线率"], errors="coerce")
+            gwei_detail = (
+                gwei_detail.sort_values(["学部", "年级", "战队", "辅导姓名"])
+                .drop_duplicates(subset=["学部", "年级", "战队", "辅导姓名"], keep="last")
+            )
+            roster = roster.merge(
+                gwei_detail.rename(columns={"风灵微信在线率": "__gwei_online_rate"}),
+                on=["学部", "年级", "战队", "辅导姓名"],
+                how="left",
+            )
+            roster["个微在线率"] = roster["__gwei_online_rate"].where(
+                roster["__gwei_online_rate"].notna(), roster["个微在线率"]
+            )
+            roster = roster.drop(columns=["__gwei_online_rate"])
+        roster["个微在线率"] = pd.to_numeric(roster["个微在线率"], errors="coerce")
         roster = roster.drop_duplicates(subset=["学部", "年级", "战队", "辅导姓名"], keep="first")
 
         # User-specified correction: keep this team under 高二 for 高短

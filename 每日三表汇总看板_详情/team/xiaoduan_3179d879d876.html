@@ -77,7 +77,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 </head>
 <body>
   <div class="page">
-    <a class="back-link" href="../xiaoduan_auth.html">← 返回小短明细页</a>
+    <a id="backLink" class="back-link" href="../xiaoduan_auth.html">← 返回小短个微授权明细</a>
     <h1 class="main-title">小短｜魏新卓战队 战队明细（2026-07-25）</h1>
     
 <h2 class="section-title">个微&授权明细</h2>
@@ -101,5 +101,26 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 </table>
 
   </div>
+  <script>
+    (function() {
+      var from = new URLSearchParams(window.location.search).get("from");
+      var map = {
+        auth: "../xiaoduan_auth.html",
+        sales: "../xiaoduan_sales.html",
+        bad: "../xiaoduan_bad.html"
+      };
+      var labelMap = {
+        auth: "← 返回小短个微授权明细",
+        sales: "← 返回小短企微在线明细",
+        bad: "← 返回小短未达标名单"
+      };
+      var key = map[from] ? from : "auth";
+      var back = document.getElementById("backLink");
+      if (back) {
+        back.setAttribute("href", map[key]);
+        back.textContent = labelMap[key];
+      }
+    })();
+  </script>
 </body>
 </html>
