@@ -65,6 +65,12 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
 .chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
 .weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
+.weekly-query-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; }
+.weekly-query-bar label { font-size: 16px; font-weight: 700; color: #334155; }
+.weekly-query-bar select { min-width: 280px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; }
+.weekly-query-btn { font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }
+.weekly-query-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+.weekly-query-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
   .weekly-grid { grid-template-columns: 1fr; }
@@ -79,57 +85,29 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
   <div class="page">
     <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
     <h1 class="dashboard-title">周维度在线率看板（郑州）</h1>
-    <div class="dashboard-sub">2026-07-27 ~ 2026-08-02（周一至周日）</div>
-    <section class="weekly-grid">
-      
-<div class="weekly-card weekly-chuduan1">
-  <div class="weekly-seg">初短一部</div>
-  <div class="weekly-kpi">本周个微在线均值：<span class="kpi-value kpi-low">13.50%</span></div>
-  <div class="weekly-kpi">本周手机端在线均值：<span class="kpi-value kpi-low">26.00%</span></div>
-  <div class="weekly-kpi">本周电脑端在线均值：<span class="kpi-value kpi-high">91.50%</span></div>
-  <div class="weekly-kpi">本周授权率均值：<span class="kpi-value">65.00%</span></div>
-</div>
-
-<div class="weekly-card weekly-chuduan2">
-  <div class="weekly-seg">初短二部</div>
-  <div class="weekly-kpi">本周个微在线均值：<span class="kpi-value kpi-low">19.51%</span></div>
-  <div class="weekly-kpi">本周手机端在线均值：<span class="kpi-value kpi-low">29.88%</span></div>
-  <div class="weekly-kpi">本周电脑端在线均值：<span class="kpi-value kpi-high">92.68%</span></div>
-  <div class="weekly-kpi">本周授权率均值：<span class="kpi-value kpi-high">93.29%</span></div>
-</div>
-
-<div class="weekly-card weekly-xiaoduan">
-  <div class="weekly-seg">小短</div>
-  <div class="weekly-kpi">本周个微在线均值：<span class="kpi-value kpi-low">33.33%</span></div>
-  <div class="weekly-kpi">本周手机端在线均值：<span class="kpi-value">71.43%</span></div>
-  <div class="weekly-kpi">本周电脑端在线均值：<span class="kpi-value kpi-high">80.95%</span></div>
-  <div class="weekly-kpi">本周授权率均值：<span class="kpi-value kpi-high">90.48%</span></div>
-</div>
-
-<div class="weekly-card weekly-gaoduan">
-  <div class="weekly-seg">高短</div>
-  <div class="weekly-kpi">本周个微在线均值：<span class="kpi-value kpi-low">31.15%</span></div>
-  <div class="weekly-kpi">本周手机端在线均值：<span class="kpi-value">52.46%</span></div>
-  <div class="weekly-kpi">本周电脑端在线均值：<span class="kpi-value kpi-high">81.97%</span></div>
-  <div class="weekly-kpi">本周授权率均值：<span class="kpi-value kpi-high">85.25%</span></div>
-</div>
-
-    </section>
+    <div class="weekly-query-bar">
+      <label for="weekSelect">历史周查询</label>
+      <select id="weekSelect" aria-label="选择历史周"></select>
+      <button type="button" class="weekly-query-btn" id="prevWeekBtn">上一周</button>
+      <button type="button" class="weekly-query-btn" id="nextWeekBtn">下一周</button>
+    </div>
+    <div class="dashboard-sub" id="weekSubtitle"></div>
+    <section class="weekly-grid" id="weeklyCards"></section>
     <section class="chart-grid">
       <div class="chart-card">
-        <h3 class="chart-title">本周个微在线率趋势（%）</h3>
+        <h3 class="chart-title">个微在线率趋势（%）</h3>
         <canvas id="gweiTrend"></canvas>
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">本周手机端在线率趋势（%）</h3>
+        <h3 class="chart-title">手机端在线率趋势（%）</h3>
         <canvas id="mobileTrend"></canvas>
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">本周电脑端在线率趋势（%）</h3>
+        <h3 class="chart-title">电脑端在线率趋势（%）</h3>
         <canvas id="pcTrend"></canvas>
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">本周授权率趋势（%）</h3>
+        <h3 class="chart-title">授权率趋势（%）</h3>
         <canvas id="authTrend"></canvas>
       </div>
     </section>
@@ -138,18 +116,145 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
         <tr><th rowspan="2">日期</th><th colspan='3'>初短一部</th><th colspan='3'>初短二部</th><th colspan='3'>小短</th><th colspan='3'>高短</th></tr>
         <tr><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th></tr>
       </thead>
-      <tbody>
-        <tr><td>2026-07-27</td><td class='rate-blue rate-high'>91.50%</td><td class='rate-yellow rate-low'>26.00%</td><td>170</td><td class='rate-blue rate-high'>92.68%</td><td class='rate-yellow rate-low'>29.88%</td><td>139</td><td class='rate-blue rate-high'>80.95%</td><td class='rate-yellow'>71.43%</td><td>14</td><td class='rate-blue rate-high'>81.97%</td><td class='rate-yellow'>52.46%</td><td>89</td></tr><tr><td>2026-07-28</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-29</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-30</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-07-31</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-08-01</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr><tr><td>2026-08-02</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td><td>#N/A</td></tr>
-      </tbody>
+      <tbody id="weeklyPivotBody"></tbody>
     </table>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const labels = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-01", "2026-08-02"];
-    const gweiDatasets = [{"label": "初短一部", "data": [13.5, 0, 0, 0, 0, 0, 0], "nums": [27, null, null, null, null, null, null], "dens": [200, null, null, null, null, null, null], "borderColor": "#ef4444", "backgroundColor": "#ef4444", "tension": 0.25}, {"label": "初短二部", "data": [19.51, 0, 0, 0, 0, 0, 0], "nums": [32, null, null, null, null, null, null], "dens": [164, null, null, null, null, null, null], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [33.33, 0, 0, 0, 0, 0, 0], "nums": [7, null, null, null, null, null, null], "dens": [21, null, null, null, null, null, null], "borderColor": "#22c55e", "backgroundColor": "#22c55e", "tension": 0.25}, {"label": "高短", "data": [31.15, 0, 0, 0, 0, 0, 0], "nums": [38, null, null, null, null, null, null], "dens": [122, null, null, null, null, null, null], "borderColor": "#f59e0b", "backgroundColor": "#f59e0b", "tension": 0.25}];
-    const mobileDatasets = [{"label": "初短一部", "data": [26.0, 0, 0, 0, 0, 0, 0], "nums": [52, null, null, null, null, null, null], "dens": [200, null, null, null, null, null, null], "borderColor": "#ef4444", "backgroundColor": "#ef4444", "tension": 0.25}, {"label": "初短二部", "data": [29.88, 0, 0, 0, 0, 0, 0], "nums": [49, null, null, null, null, null, null], "dens": [164, null, null, null, null, null, null], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [71.43, 0, 0, 0, 0, 0, 0], "nums": [15, null, null, null, null, null, null], "dens": [21, null, null, null, null, null, null], "borderColor": "#22c55e", "backgroundColor": "#22c55e", "tension": 0.25}, {"label": "高短", "data": [52.46, 0, 0, 0, 0, 0, 0], "nums": [64, null, null, null, null, null, null], "dens": [122, null, null, null, null, null, null], "borderColor": "#f59e0b", "backgroundColor": "#f59e0b", "tension": 0.25}];
-    const pcDatasets = [{"label": "初短一部", "data": [91.5, 0, 0, 0, 0, 0, 0], "nums": [183, null, null, null, null, null, null], "dens": [200, null, null, null, null, null, null], "borderColor": "#ef4444", "backgroundColor": "#ef4444", "tension": 0.25}, {"label": "初短二部", "data": [92.68, 0, 0, 0, 0, 0, 0], "nums": [152, null, null, null, null, null, null], "dens": [164, null, null, null, null, null, null], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [80.95, 0, 0, 0, 0, 0, 0], "nums": [17, null, null, null, null, null, null], "dens": [21, null, null, null, null, null, null], "borderColor": "#22c55e", "backgroundColor": "#22c55e", "tension": 0.25}, {"label": "高短", "data": [81.97, 0, 0, 0, 0, 0, 0], "nums": [100, null, null, null, null, null, null], "dens": [122, null, null, null, null, null, null], "borderColor": "#f59e0b", "backgroundColor": "#f59e0b", "tension": 0.25}];
-    const authDatasets = [{"label": "初短一部", "data": [65.0, 0, 0, 0, 0, 0, 0], "nums": [130, null, null, null, null, null, null], "dens": [200, null, null, null, null, null, null], "borderColor": "#ef4444", "backgroundColor": "#ef4444", "tension": 0.25}, {"label": "初短二部", "data": [93.29, 0, 0, 0, 0, 0, 0], "nums": [153, null, null, null, null, null, null], "dens": [164, null, null, null, null, null, null], "borderColor": "#8b5cf6", "backgroundColor": "#8b5cf6", "tension": 0.25}, {"label": "小短", "data": [90.48, 0, 0, 0, 0, 0, 0], "nums": [19, null, null, null, null, null, null], "dens": [21, null, null, null, null, null, null], "borderColor": "#22c55e", "backgroundColor": "#22c55e", "tension": 0.25}, {"label": "高短", "data": [85.25, 0, 0, 0, 0, 0, 0], "nums": [104, null, null, null, null, null, null], "dens": [122, null, null, null, null, null, null], "borderColor": "#f59e0b", "backgroundColor": "#f59e0b", "tension": 0.25}];
+    const HISTORY = [{"date": "2026-07-20", "segment": "初短一部", "auth_rate": 0.5874439461883408, "online_rate": 0.5358744394618834, "gwei_rate": 0.1390134529147982, "mobile_rate": 0.2466367713004484, "pc_rate": 0.8251121076233184, "auth_num": 131.0, "auth_den": 223.0, "gwei_num": 31.0, "gwei_den": 223.0, "mobile_num": 55.0, "mobile_den": 223.0, "pc_num": 184.0, "pc_den": 223.0, "bad_count": 179.0}, {"date": "2026-07-20", "segment": "初短二部", "auth_rate": 0.8820224719101124, "online_rate": 0.5786516853932584, "gwei_rate": 0.1741573033707865, "mobile_rate": 0.2584269662921348, "pc_rate": 0.898876404494382, "auth_num": 157.0, "auth_den": 178.0, "gwei_num": 31.0, "gwei_den": 178.0, "mobile_num": 46.0, "mobile_den": 178.0, "pc_num": 160.0, "pc_den": 178.0, "bad_count": 150.0}, {"date": "2026-07-20", "segment": "小短", "auth_rate": 0.85, "online_rate": 0.725, "gwei_rate": 0.1, "mobile_rate": 0.6, "pc_rate": 0.85, "auth_num": 17.0, "auth_den": 20.0, "gwei_num": 2.0, "gwei_den": 20.0, "mobile_num": 12.0, "mobile_den": 20.0, "pc_num": 17.0, "pc_den": 20.0, "bad_count": 17.0}, {"date": "2026-07-20", "segment": "高短", "auth_rate": 0.8125, "online_rate": 0.64453125, "gwei_rate": 0.25, "mobile_rate": 0.4609375, "pc_rate": 0.828125, "auth_num": 104.0, "auth_den": 128.0, "gwei_num": 32.0, "gwei_den": 128.0, "mobile_num": 59.0, "mobile_den": 128.0, "pc_num": 106.0, "pc_den": 128.0, "bad_count": 102.0}, {"date": "2026-07-21", "segment": "初短一部", "auth_rate": 0.6017699115044248, "online_rate": 0.5243362831858407, "gwei_rate": 0.1327433628318584, "mobile_rate": 0.2345132743362832, "pc_rate": 0.8141592920353983, "auth_num": 136.0, "auth_den": 226.0, "gwei_num": 30.0, "gwei_den": 226.0, "mobile_num": 53.0, "mobile_den": 226.0, "pc_num": 184.0, "pc_den": 226.0, "bad_count": 186.0}, {"date": "2026-07-21", "segment": "初短二部", "auth_rate": 0.904494382022472, "online_rate": 0.5561797752808989, "gwei_rate": 0.1516853932584269, "mobile_rate": 0.2415730337078651, "pc_rate": 0.8707865168539326, "auth_num": 161.0, "auth_den": 178.0, "gwei_num": 27.0, "gwei_den": 178.0, "mobile_num": 43.0, "mobile_den": 178.0, "pc_num": 155.0, "pc_den": 178.0, "bad_count": 151.0}, {"date": "2026-07-21", "segment": "小短", "auth_rate": 0.85, "online_rate": 0.7, "gwei_rate": 0.2, "mobile_rate": 0.65, "pc_rate": 0.75, "auth_num": 17.0, "auth_den": 20.0, "gwei_num": 4.0, "gwei_den": 20.0, "mobile_num": 13.0, "mobile_den": 20.0, "pc_num": 15.0, "pc_den": 20.0, "bad_count": 16.0}, {"date": "2026-07-21", "segment": "高短", "auth_rate": 0.8188976377952756, "online_rate": 0.610236220472441, "gwei_rate": 0.2677165354330709, "mobile_rate": 0.4724409448818897, "pc_rate": 0.7480314960629921, "auth_num": 104.0, "auth_den": 127.0, "gwei_num": 34.0, "gwei_den": 127.0, "mobile_num": 60.0, "mobile_den": 127.0, "pc_num": 95.0, "pc_den": 127.0, "bad_count": 99.0}, {"date": "2026-07-22", "segment": "初短一部", "auth_rate": 0.6088888888888889, "online_rate": 0.5755555555555556, "gwei_rate": 0.1466666666666666, "mobile_rate": 0.2622222222222222, "pc_rate": 0.8888888888888888, "auth_num": 137.0, "auth_den": 225.0, "gwei_num": 33.0, "gwei_den": 225.0, "mobile_num": 59.0, "mobile_den": 225.0, "pc_num": 200.0, "pc_den": 225.0, "bad_count": 183.0}, {"date": "2026-07-22", "segment": "初短二部", "auth_rate": 0.8833333333333333, "online_rate": 0.5916666666666667, "gwei_rate": 0.2055555555555555, "mobile_rate": 0.3, "pc_rate": 0.8833333333333333, "auth_num": 159.0, "auth_den": 180.0, "gwei_num": 37.0, "gwei_den": 180.0, "mobile_num": 54.0, "mobile_den": 180.0, "pc_num": 159.0, "pc_den": 180.0, "bad_count": 144.0}, {"date": "2026-07-22", "segment": "小短", "auth_rate": 0.85, "online_rate": 0.65, "gwei_rate": 0.35, "mobile_rate": 0.55, "pc_rate": 0.75, "auth_num": 17.0, "auth_den": 20.0, "gwei_num": 7.0, "gwei_den": 20.0, "mobile_num": 11.0, "mobile_den": 20.0, "pc_num": 15.0, "pc_den": 20.0, "bad_count": 13.0}, {"date": "2026-07-22", "segment": "高短", "auth_rate": 0.8571428571428571, "online_rate": 0.7023809523809523, "gwei_rate": 0.3571428571428571, "mobile_rate": 0.5793650793650794, "pc_rate": 0.8253968253968254, "auth_num": 108.0, "auth_den": 126.0, "gwei_num": 45.0, "gwei_den": 126.0, "mobile_num": 73.0, "mobile_den": 126.0, "pc_num": 104.0, "pc_den": 126.0, "bad_count": 88.0}, {"date": "2026-07-23", "segment": "初短一部", "auth_rate": 0.6044444444444445, "online_rate": 0.5844444444444444, "gwei_rate": 0.1288888888888889, "mobile_rate": 0.2622222222222222, "pc_rate": 0.9066666666666666, "auth_num": 136.0, "auth_den": 225.0, "gwei_num": 29.0, "gwei_den": 225.0, "mobile_num": 59.0, "mobile_den": 225.0, "pc_num": 204.0, "pc_den": 225.0, "bad_count": 181.0}, {"date": "2026-07-23", "segment": "初短二部", "auth_rate": 0.9, "online_rate": 0.5916666666666667, "gwei_rate": 0.1888888888888888, "mobile_rate": 0.2944444444444444, "pc_rate": 0.8888888888888888, "auth_num": 162.0, "auth_den": 180.0, "gwei_num": 34.0, "gwei_den": 180.0, "mobile_num": 53.0, "mobile_den": 180.0, "pc_num": 160.0, "pc_den": 180.0, "bad_count": 144.0}, {"date": "2026-07-23", "segment": "小短", "auth_rate": 0.85, "online_rate": 0.8, "gwei_rate": 0.4, "mobile_rate": 0.7, "pc_rate": 0.9, "auth_num": 17.0, "auth_den": 20.0, "gwei_num": 8.0, "gwei_den": 20.0, "mobile_num": 14.0, "mobile_den": 20.0, "pc_num": 18.0, "pc_den": 20.0, "bad_count": 11.0}, {"date": "2026-07-23", "segment": "高短", "auth_rate": 0.8571428571428571, "online_rate": 0.7301587301587301, "gwei_rate": 0.373015873015873, "mobile_rate": 0.5793650793650794, "pc_rate": 0.8809523809523809, "auth_num": 108.0, "auth_den": 126.0, "gwei_num": 47.0, "gwei_den": 126.0, "mobile_num": 73.0, "mobile_den": 126.0, "pc_num": 111.0, "pc_den": 126.0, "bad_count": 82.0}, {"date": "2026-07-24", "segment": "初短一部", "auth_rate": 0.6088888888888889, "online_rate": 0.5955555555555555, "gwei_rate": 0.1466666666666667, "mobile_rate": 0.28, "pc_rate": 0.9111111111111112, "auth_num": 137.0, "auth_den": 225.0, "gwei_num": 33.0, "gwei_den": 225.0, "mobile_num": 63.0, "mobile_den": 225.0, "pc_num": 205.0, "pc_den": 225.0, "bad_count": 182.0}, {"date": "2026-07-24", "segment": "初短二部", "auth_rate": 0.9, "online_rate": 0.6, "gwei_rate": 0.2111111111111111, "mobile_rate": 0.3111111111111111, "pc_rate": 0.8888888888888888, "auth_num": 162.0, "auth_den": 180.0, "gwei_num": 38.0, "gwei_den": 180.0, "mobile_num": 56.0, "mobile_den": 180.0, "pc_num": 160.0, "pc_den": 180.0, "bad_count": 146.0}, {"date": "2026-07-24", "segment": "小短", "auth_rate": 0.8095238095238095, "online_rate": 0.6904761904761905, "gwei_rate": 0.3333333333333333, "mobile_rate": 0.6190476190476191, "pc_rate": 0.7619047619047619, "auth_num": 17.0, "auth_den": 21.0, "gwei_num": 7.0, "gwei_den": 21.0, "mobile_num": 13.0, "mobile_den": 21.0, "pc_num": 16.0, "pc_den": 21.0, "bad_count": 13.0}, {"date": "2026-07-24", "segment": "高短", "auth_rate": 0.8492063492063492, "online_rate": 0.75, "gwei_rate": 0.3888888888888889, "mobile_rate": 0.6111111111111112, "pc_rate": 0.8888888888888888, "auth_num": 107.0, "auth_den": 126.0, "gwei_num": 49.0, "gwei_den": 126.0, "mobile_num": 77.0, "mobile_den": 126.0, "pc_num": 112.0, "pc_den": 126.0, "bad_count": 77.0}, {"date": "2026-07-25", "segment": "初短一部", "auth_rate": 0.6088888888888889, "online_rate": 0.6066666666666667, "gwei_rate": 0.16, "mobile_rate": 0.2977777777777778, "pc_rate": 0.9155555555555556, "auth_num": 137.0, "auth_den": 225.0, "gwei_num": 36.0, "gwei_den": 225.0, "mobile_num": 67.0, "mobile_den": 225.0, "pc_num": 206.0, "pc_den": 225.0, "bad_count": 177.0}, {"date": "2026-07-25", "segment": "初短二部", "auth_rate": 0.9055555555555556, "online_rate": 0.6166666666666667, "gwei_rate": 0.2222222222222222, "mobile_rate": 0.3111111111111111, "pc_rate": 0.9222222222222224, "auth_num": 163.0, "auth_den": 180.0, "gwei_num": 40.0, "gwei_den": 180.0, "mobile_num": 56.0, "mobile_den": 180.0, "pc_num": 166.0, "pc_den": 180.0, "bad_count": 140.0}, {"date": "2026-07-25", "segment": "小短", "auth_rate": 0.8095238095238095, "online_rate": 0.7142857142857143, "gwei_rate": 0.3809523809523809, "mobile_rate": 0.6666666666666666, "pc_rate": 0.7619047619047619, "auth_num": 17.0, "auth_den": 21.0, "gwei_num": 8.0, "gwei_den": 21.0, "mobile_num": 14.0, "mobile_den": 21.0, "pc_num": 16.0, "pc_den": 21.0, "bad_count": 13.0}, {"date": "2026-07-25", "segment": "高短", "auth_rate": 0.8492063492063492, "online_rate": 0.7738095238095238, "gwei_rate": 0.4047619047619048, "mobile_rate": 0.6428571428571429, "pc_rate": 0.9047619047619048, "auth_num": 107.0, "auth_den": 126.0, "gwei_num": 51.0, "gwei_den": 126.0, "mobile_num": 81.0, "mobile_den": 126.0, "pc_num": 114.0, "pc_den": 126.0, "bad_count": 78.0}, {"date": "2026-07-27", "segment": "初短一部", "auth_rate": 0.65, "online_rate": 0.5875, "gwei_rate": 0.135, "mobile_rate": 0.26, "pc_rate": 0.915, "auth_num": 130.0, "auth_den": 200.0, "gwei_num": 27.0, "gwei_den": 200.0, "mobile_num": 52.0, "mobile_den": 200.0, "pc_num": 183.0, "pc_den": 200.0, "bad_count": 170.0}, {"date": "2026-07-27", "segment": "初短二部", "auth_rate": 0.9329268292682927, "online_rate": 0.6128048780487805, "gwei_rate": 0.1951219512195122, "mobile_rate": 0.298780487804878, "pc_rate": 0.926829268292683, "auth_num": 153.0, "auth_den": 164.0, "gwei_num": 32.0, "gwei_den": 164.0, "mobile_num": 49.0, "mobile_den": 164.0, "pc_num": 152.0, "pc_den": 164.0, "bad_count": 139.0}, {"date": "2026-07-27", "segment": "小短", "auth_rate": 0.9047619047619048, "online_rate": 0.7619047619047619, "gwei_rate": 0.3333333333333333, "mobile_rate": 0.7142857142857143, "pc_rate": 0.8095238095238095, "auth_num": 19.0, "auth_den": 21.0, "gwei_num": 7.0, "gwei_den": 21.0, "mobile_num": 15.0, "mobile_den": 21.0, "pc_num": 17.0, "pc_den": 21.0, "bad_count": 14.0}, {"date": "2026-07-27", "segment": "高短", "auth_rate": 0.8524590163934426, "online_rate": 0.6721311475409836, "gwei_rate": 0.3114754098360656, "mobile_rate": 0.5245901639344263, "pc_rate": 0.819672131147541, "auth_num": 104.0, "auth_den": 122.0, "gwei_num": 38.0, "gwei_den": 122.0, "mobile_num": 64.0, "mobile_den": 122.0, "pc_num": 100.0, "pc_den": 122.0, "bad_count": 89.0}];
+    const WEEK_OPTIONS = ["2026-07-27", "2026-07-20"];
+    const DEFAULT_WEEK = "2026-07-27";
+    const SEGMENTS = ["初短一部", "初短二部", "小短", "高短"];
+    const SEGMENT_KEYS = {"初短一部": "chuduan1", "初短二部": "chuduan2", "小短": "xiaoduan", "高短": "gaoduan"};
+    const SEG_COLORS = {"初短一部": "#ef4444", "初短二部": "#8b5cf6", "小短": "#22c55e", "高短": "#f59e0b"};
+    const TODAY_WEEK = "2026-07-27";
+
+    const charts = {};
+    const weekSelect = document.getElementById("weekSelect");
+    const prevWeekBtn = document.getElementById("prevWeekBtn");
+    const nextWeekBtn = document.getElementById("nextWeekBtn");
+
+    function addDays(iso, days) {
+      const d = new Date(iso + "T00:00:00");
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function weekLabel(weekStart) {
+      const weekEnd = addDays(weekStart, 6);
+      let suffix = "";
+      if (weekStart === TODAY_WEEK) suffix = "（本周）";
+      else if (weekStart === addDays(TODAY_WEEK, -7)) suffix = "（上周）";
+      return `${weekStart} ~ ${weekEnd}（周一至周日）${suffix}`;
+    }
+
+    function pct(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "#N/A";
+      return (v * 100).toFixed(2) + "%";
+    }
+
+    function intText(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "#N/A";
+      return String(Math.round(v));
+    }
+
+    function kpiClass(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "";
+      if (v < 0.5) return " kpi-low";
+      if (v > 0.8) return " kpi-high";
+      return "";
+    }
+
+    function rateClass(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "";
+      if (v < 0.5) return " rate-low";
+      if (v > 0.8) return " rate-high";
+      return "";
+    }
+
+    function avg(values) {
+      const nums = values.filter((v) => v !== null && v !== undefined && !Number.isNaN(v));
+      if (!nums.length) return null;
+      return nums.reduce((a, b) => a + b, 0) / nums.length;
+    }
+
+    function weekLabels(weekStart) {
+      return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    }
+
+    function weekRows(weekStart) {
+      const labels = weekLabels(weekStart);
+      const weekEnd = labels[6];
+      return HISTORY.filter((row) => row.date >= weekStart && row.date <= weekEnd);
+    }
+
+    function makeLineDatasets(rows, labels, rateKey, numKey, denKey) {
+      return SEGMENTS.map((seg) => {
+        const segRows = rows.filter((row) => row.segment === seg);
+        const rateMap = Object.fromEntries(segRows.map((row) => [row.date, row[rateKey]]));
+        const numMap = Object.fromEntries(segRows.map((row) => [row.date, row[numKey]]));
+        const denMap = Object.fromEntries(segRows.map((row) => [row.date, row[denKey]]));
+        return {
+          label: seg,
+          data: labels.map((d) => {
+            const val = rateMap[d];
+            return val === null || val === undefined ? 0 : Math.round(val * 10000) / 100;
+          }),
+          nums: labels.map((d) => (numMap[d] === null || numMap[d] === undefined ? null : Math.round(numMap[d]))),
+          dens: labels.map((d) => (denMap[d] === null || denMap[d] === undefined ? null : Math.round(denMap[d]))),
+          borderColor: SEG_COLORS[seg] || "#334155",
+          backgroundColor: SEG_COLORS[seg] || "#334155",
+          tension: 0.25,
+        };
+      });
+    }
+
+    function renderCards(rows) {
+      const container = document.getElementById("weeklyCards");
+      container.innerHTML = SEGMENTS.map((seg) => {
+        const segRows = rows.filter((row) => row.segment === seg);
+        const cardCls = "weekly-" + (SEGMENT_KEYS[seg] || "");
+        if (!segRows.length) {
+          return `<div class="weekly-card ${cardCls}"><div class="weekly-seg">${seg}</div><div class="weekly-kpi">该周暂无数据</div></div>`;
+        }
+        const gweiAvg = avg(segRows.map((row) => row.gwei_rate));
+        const mobileAvg = avg(segRows.map((row) => row.mobile_rate));
+        const pcAvg = avg(segRows.map((row) => row.pc_rate));
+        const authAvg = avg(segRows.map((row) => row.auth_rate));
+        return `<div class="weekly-card ${cardCls}">
+          <div class="weekly-seg">${seg}</div>
+          <div class="weekly-kpi">个微在线均值：<span class="kpi-value${kpiClass(gweiAvg)}">${pct(gweiAvg)}</span></div>
+          <div class="weekly-kpi">手机端在线均值：<span class="kpi-value${kpiClass(mobileAvg)}">${pct(mobileAvg)}</span></div>
+          <div class="weekly-kpi">电脑端在线均值：<span class="kpi-value${kpiClass(pcAvg)}">${pct(pcAvg)}</span></div>
+          <div class="weekly-kpi">授权率均值：<span class="kpi-value${kpiClass(authAvg)}">${pct(authAvg)}</span></div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderPivot(rows, labels) {
+      const tbody = document.getElementById("weeklyPivotBody");
+      const latestByDateSeg = {};
+      rows.forEach((row) => {
+        latestByDateSeg[row.date + "|" + row.segment] = row;
+      });
+      tbody.innerHTML = labels.map((d) => {
+        const cells = [`<td>${d}</td>`];
+        SEGMENTS.forEach((seg) => {
+          const row = latestByDateSeg[d + "|" + seg];
+          if (!row) {
+            cells.push("<td>#N/A</td><td>#N/A</td><td>#N/A</td>");
+          } else {
+            cells.push(
+              `<td class="rate-blue${rateClass(row.pc_rate)}">${pct(row.pc_rate)}</td>` +
+              `<td class="rate-yellow${rateClass(row.mobile_rate)}">${pct(row.mobile_rate)}</td>` +
+              `<td>${intText(row.bad_count)}</td>`
+            );
+          }
+        });
+        return `<tr>${cells.join("")}</tr>`;
+      }).join("");
+    }
+
     const tooltipCb = {
       callbacks: {
         label: function(ctx) {
@@ -164,31 +269,67 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
         }
       }
     };
+
     const commonOptions = {
       responsive: true,
-      plugins: Object.assign({ legend: { position: 'bottom' } }, tooltipCb),
+      plugins: Object.assign({ legend: { position: "bottom" } }, tooltipCb),
       scales: { y: { min: 0, max: 100 } }
     };
-    new Chart(document.getElementById('gweiTrend'), {
-      type: 'line',
-      data: { labels, datasets: gweiDatasets },
-      options: commonOptions
+
+    function ensureChart(id, labels, datasets) {
+      if (charts[id]) {
+        charts[id].data.labels = labels;
+        charts[id].data.datasets = datasets;
+        charts[id].update();
+        return;
+      }
+      charts[id] = new Chart(document.getElementById(id), {
+        type: "line",
+        data: { labels, datasets },
+        options: commonOptions
+      });
+    }
+
+    function updateNavButtons(weekStart) {
+      const idx = WEEK_OPTIONS.indexOf(weekStart);
+      prevWeekBtn.disabled = idx < 0 || idx >= WEEK_OPTIONS.length - 1;
+      nextWeekBtn.disabled = idx <= 0;
+    }
+
+    function renderWeek(weekStart) {
+      const labels = weekLabels(weekStart);
+      const rows = weekRows(weekStart);
+      document.getElementById("weekSubtitle").textContent = weekLabel(weekStart);
+      renderCards(rows);
+      renderPivot(rows, labels);
+      ensureChart("gweiTrend", labels, makeLineDatasets(rows, labels, "gwei_rate", "gwei_num", "gwei_den"));
+      ensureChart("mobileTrend", labels, makeLineDatasets(rows, labels, "mobile_rate", "mobile_num", "mobile_den"));
+      ensureChart("pcTrend", labels, makeLineDatasets(rows, labels, "pc_rate", "pc_num", "pc_den"));
+      ensureChart("authTrend", labels, makeLineDatasets(rows, labels, "auth_rate", "auth_num", "auth_den"));
+      weekSelect.value = weekStart;
+      updateNavButtons(weekStart);
+      const url = new URL(window.location.href);
+      url.searchParams.set("week", weekStart);
+      window.history.replaceState(null, "", url.toString());
+    }
+
+    weekSelect.innerHTML = WEEK_OPTIONS.map((weekStart) => {
+      return `<option value="${weekStart}">${weekLabel(weekStart)}</option>`;
+    }).join("");
+
+    weekSelect.addEventListener("change", () => renderWeek(weekSelect.value));
+    prevWeekBtn.addEventListener("click", () => {
+      const idx = WEEK_OPTIONS.indexOf(weekSelect.value);
+      if (idx >= 0 && idx < WEEK_OPTIONS.length - 1) renderWeek(WEEK_OPTIONS[idx + 1]);
     });
-    new Chart(document.getElementById('mobileTrend'), {
-      type: 'line',
-      data: { labels, datasets: mobileDatasets },
-      options: commonOptions
+    nextWeekBtn.addEventListener("click", () => {
+      const idx = WEEK_OPTIONS.indexOf(weekSelect.value);
+      if (idx > 0) renderWeek(WEEK_OPTIONS[idx - 1]);
     });
-    new Chart(document.getElementById('pcTrend'), {
-      type: 'line',
-      data: { labels, datasets: pcDatasets },
-      options: commonOptions
-    });
-    new Chart(document.getElementById('authTrend'), {
-      type: 'line',
-      data: { labels, datasets: authDatasets },
-      options: commonOptions
-    });
+
+    const params = new URLSearchParams(window.location.search);
+    const initialWeek = params.get("week");
+    renderWeek(WEEK_OPTIONS.includes(initialWeek) ? initialWeek : DEFAULT_WEEK);
   </script>
 </body>
 </html>

@@ -569,6 +569,12 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
 .chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
 .weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
+.weekly-query-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; }
+.weekly-query-bar label { font-size: 16px; font-weight: 700; color: #334155; }
+.weekly-query-bar select { min-width: 280px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; }
+.weekly-query-btn { font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }
+.weekly-query-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+.weekly-query-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
   .weekly-grid { grid-template-columns: 1fr; }
@@ -717,6 +723,57 @@ def build_mobile_offline_period_map(df: pd.DataFrame) -> pd.DataFrame:
     return grouped
 
 
+def week_start_for(d: date) -> date:
+    return d - timedelta(days=d.weekday())
+
+
+def prepare_history_records(history_df: pd.DataFrame) -> List[dict]:
+    if history_df.empty:
+        return []
+    df = history_df.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"])
+    numeric_cols = [
+        "auth_rate",
+        "online_rate",
+        "gwei_rate",
+        "mobile_rate",
+        "pc_rate",
+        "auth_num",
+        "auth_den",
+        "gwei_num",
+        "gwei_den",
+        "mobile_num",
+        "mobile_den",
+        "pc_num",
+        "pc_den",
+        "bad_count",
+    ]
+    for col in numeric_cols:
+        if col not in df.columns:
+            df[col] = pd.NA
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+    records: List[dict] = []
+    for _, row in df.iterrows():
+        item = {"date": row["date"].strftime("%Y-%m-%d"), "segment": str(row["segment"])}
+        for col in numeric_cols:
+            val = row[col]
+            item[col] = None if pd.isna(val) else float(val)
+        records.append(item)
+    return records
+
+
+def available_week_starts(history_df: pd.DataFrame, today: date) -> List[str]:
+    if history_df.empty:
+        return [week_start_for(today).isoformat()]
+    df = history_df.copy()
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"])
+    week_starts = {week_start_for(d.date()).isoformat() for d in df["date"]}
+    week_starts.add(week_start_for(today).isoformat())
+    return sorted(week_starts, reverse=True)
+
+
 def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     if history_df.empty:
         return f"""
@@ -737,112 +794,11 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
 </body>
 </html>
 """
-    df = history_df.copy()
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df = df.dropna(subset=["date"])
-    if df.empty:
-        return build_weekly_page(pd.DataFrame(), today)
-
-    for col in [
-        "auth_rate",
-        "online_rate",
-        "gwei_rate",
-        "mobile_rate",
-        "pc_rate",
-        "auth_num",
-        "auth_den",
-        "gwei_num",
-        "gwei_den",
-        "mobile_num",
-        "mobile_den",
-        "pc_num",
-        "pc_den",
-        "bad_count",
-    ]:
-        if col not in df.columns:
-            df[col] = pd.NA
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    week_start = today - timedelta(days=today.weekday())
-    week_end = week_start + timedelta(days=6)
-    labels = [(week_start + timedelta(days=i)).isoformat() for i in range(7)]
-    week_df = df[(df["date"].dt.date >= week_start) & (df["date"].dt.date <= week_end)].copy()
-    week_df["date_text"] = week_df["date"].dt.strftime("%Y-%m-%d")
-
-    seg_cards = []
-    for seg in SEGMENTS:
-        seg_df = week_df[week_df["segment"] == seg]
-        card_cls = f"weekly-{SEGMENT_KEYS.get(seg,'')}"
-        if seg_df.empty:
-            seg_cards.append(f'<div class="weekly-card {card_cls}"><div class="weekly-seg">{seg}</div><div class="weekly-kpi">本周暂无数据</div></div>')
-            continue
-        gwei_avg = seg_df["gwei_rate"].mean()
-        mobile_avg = seg_df["mobile_rate"].mean()
-        pc_avg = seg_df["pc_rate"].mean()
-        auth_avg = seg_df["auth_rate"].mean()
-        seg_cards.append(
-            f"""
-<div class="weekly-card {card_cls}">
-  <div class="weekly-seg">{seg}</div>
-  <div class="weekly-kpi">本周个微在线均值：<span class="kpi-value{kpi_level_class(gwei_avg)}">{safe_pct(gwei_avg)}</span></div>
-  <div class="weekly-kpi">本周手机端在线均值：<span class="kpi-value{kpi_level_class(mobile_avg)}">{safe_pct(mobile_avg)}</span></div>
-  <div class="weekly-kpi">本周电脑端在线均值：<span class="kpi-value{kpi_level_class(pc_avg)}">{safe_pct(pc_avg)}</span></div>
-  <div class="weekly-kpi">本周授权率均值：<span class="kpi-value{kpi_level_class(auth_avg)}">{safe_pct(auth_avg)}</span></div>
-</div>
-"""
-        )
-
-    seg_colors = {"初短一部": "#ef4444", "初短二部": "#8b5cf6", "小短": "#22c55e", "高短": "#f59e0b"}
-
-    def make_line_datasets(rate_col: str, num_col: str, den_col: str) -> List[dict]:
-        result = []
-        for seg in SEGMENTS:
-            seg_df = week_df[week_df["segment"] == seg]
-            rate_map = {r["date_text"]: safe_float(r[rate_col]) for _, r in seg_df.iterrows()}
-            num_map = {r["date_text"]: safe_float(r[num_col]) for _, r in seg_df.iterrows()}
-            den_map = {r["date_text"]: safe_float(r[den_col]) for _, r in seg_df.iterrows()}
-            vals = [round((rate_map.get(d) or 0) * 100, 2) for d in labels]
-            nums = [None if num_map.get(d) is None else int(num_map.get(d)) for d in labels]
-            dens = [None if den_map.get(d) is None else int(den_map.get(d)) for d in labels]
-            result.append(
-                {
-                    "label": seg,
-                    "data": vals,
-                    "nums": nums,
-                    "dens": dens,
-                    "borderColor": seg_colors.get(seg, "#334155"),
-                    "backgroundColor": seg_colors.get(seg, "#334155"),
-                    "tension": 0.25,
-                }
-            )
-        return result
-
-    gwei_datasets = make_line_datasets("gwei_rate", "gwei_num", "gwei_den")
-    mobile_datasets = make_line_datasets("mobile_rate", "mobile_num", "mobile_den")
-    pc_datasets = make_line_datasets("pc_rate", "pc_num", "pc_den")
-    auth_datasets = make_line_datasets("auth_rate", "auth_num", "auth_den")
-
-    pivot_rows = []
-    recent = week_df.sort_values("date").drop_duplicates(["date_text", "segment"], keep="last")
-    for d in labels:
-        ddf = recent[recent["date_text"] == d]
-        seg_map = {r["segment"]: r for _, r in ddf.iterrows()}
-        row = [f"<td>{d}</td>"]
-        for seg in SEGMENTS:
-            r = seg_map.get(seg)
-            if r is None:
-                row.append("<td>#N/A</td><td>#N/A</td><td>#N/A</td>")
-            else:
-                pc_cls = rate_level_class(r["pc_rate"])
-                mobile_cls = rate_level_class(r["mobile_rate"])
-                row.append(
-                    f"<td class='rate-blue{pc_cls}'>{safe_pct(r['pc_rate'])}</td><td class='rate-yellow{mobile_cls}'>{safe_pct(r['mobile_rate'])}</td><td>{safe_int(r['bad_count'])}</td>"
-                )
-        pivot_rows.append(f"<tr>{''.join(row)}</tr>")
-
+    history_records = prepare_history_records(history_df)
+    week_options = available_week_starts(history_df, today)
+    default_week = week_start_for(today).isoformat()
     seg_headers = "".join([f"<th colspan='3'>{seg}</th>" for seg in SEGMENTS])
     sub_headers = "".join(["<th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th>" for _ in SEGMENTS])
-    subtitle = f"{week_start.isoformat()} ~ {week_end.isoformat()}（周一至周日）"
     return f"""
 <!doctype html>
 <html lang="zh-CN">
@@ -856,25 +812,29 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
   <div class="page">
     <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
     <h1 class="dashboard-title">周维度在线率看板（郑州）</h1>
-    <div class="dashboard-sub">{subtitle}</div>
-    <section class="weekly-grid">
-      {''.join(seg_cards)}
-    </section>
+    <div class="weekly-query-bar">
+      <label for="weekSelect">历史周查询</label>
+      <select id="weekSelect" aria-label="选择历史周"></select>
+      <button type="button" class="weekly-query-btn" id="prevWeekBtn">上一周</button>
+      <button type="button" class="weekly-query-btn" id="nextWeekBtn">下一周</button>
+    </div>
+    <div class="dashboard-sub" id="weekSubtitle"></div>
+    <section class="weekly-grid" id="weeklyCards"></section>
     <section class="chart-grid">
       <div class="chart-card">
-        <h3 class="chart-title">本周个微在线率趋势（%）</h3>
+        <h3 class="chart-title">个微在线率趋势（%）</h3>
         <canvas id="gweiTrend"></canvas>
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">本周手机端在线率趋势（%）</h3>
+        <h3 class="chart-title">手机端在线率趋势（%）</h3>
         <canvas id="mobileTrend"></canvas>
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">本周电脑端在线率趋势（%）</h3>
+        <h3 class="chart-title">电脑端在线率趋势（%）</h3>
         <canvas id="pcTrend"></canvas>
       </div>
       <div class="chart-card">
-        <h3 class="chart-title">本周授权率趋势（%）</h3>
+        <h3 class="chart-title">授权率趋势（%）</h3>
         <canvas id="authTrend"></canvas>
       </div>
     </section>
@@ -883,18 +843,145 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
         <tr><th rowspan="2">日期</th>{seg_headers}</tr>
         <tr>{sub_headers}</tr>
       </thead>
-      <tbody>
-        {''.join(pivot_rows)}
-      </tbody>
+      <tbody id="weeklyPivotBody"></tbody>
     </table>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const labels = {json.dumps(labels, ensure_ascii=False)};
-    const gweiDatasets = {json.dumps(gwei_datasets, ensure_ascii=False)};
-    const mobileDatasets = {json.dumps(mobile_datasets, ensure_ascii=False)};
-    const pcDatasets = {json.dumps(pc_datasets, ensure_ascii=False)};
-    const authDatasets = {json.dumps(auth_datasets, ensure_ascii=False)};
+    const HISTORY = {json.dumps(history_records, ensure_ascii=False)};
+    const WEEK_OPTIONS = {json.dumps(week_options, ensure_ascii=False)};
+    const DEFAULT_WEEK = {json.dumps(default_week, ensure_ascii=False)};
+    const SEGMENTS = {json.dumps(SEGMENTS, ensure_ascii=False)};
+    const SEGMENT_KEYS = {json.dumps(SEGMENT_KEYS, ensure_ascii=False)};
+    const SEG_COLORS = {json.dumps({"初短一部": "#ef4444", "初短二部": "#8b5cf6", "小短": "#22c55e", "高短": "#f59e0b"}, ensure_ascii=False)};
+    const TODAY_WEEK = {json.dumps(default_week, ensure_ascii=False)};
+
+    const charts = {{}};
+    const weekSelect = document.getElementById("weekSelect");
+    const prevWeekBtn = document.getElementById("prevWeekBtn");
+    const nextWeekBtn = document.getElementById("nextWeekBtn");
+
+    function addDays(iso, days) {{
+      const d = new Date(iso + "T00:00:00");
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }}
+
+    function weekLabel(weekStart) {{
+      const weekEnd = addDays(weekStart, 6);
+      let suffix = "";
+      if (weekStart === TODAY_WEEK) suffix = "（本周）";
+      else if (weekStart === addDays(TODAY_WEEK, -7)) suffix = "（上周）";
+      return `${{weekStart}} ~ ${{weekEnd}}（周一至周日）${{suffix}}`;
+    }}
+
+    function pct(v) {{
+      if (v === null || v === undefined || Number.isNaN(v)) return "#N/A";
+      return (v * 100).toFixed(2) + "%";
+    }}
+
+    function intText(v) {{
+      if (v === null || v === undefined || Number.isNaN(v)) return "#N/A";
+      return String(Math.round(v));
+    }}
+
+    function kpiClass(v) {{
+      if (v === null || v === undefined || Number.isNaN(v)) return "";
+      if (v < 0.5) return " kpi-low";
+      if (v > 0.8) return " kpi-high";
+      return "";
+    }}
+
+    function rateClass(v) {{
+      if (v === null || v === undefined || Number.isNaN(v)) return "";
+      if (v < 0.5) return " rate-low";
+      if (v > 0.8) return " rate-high";
+      return "";
+    }}
+
+    function avg(values) {{
+      const nums = values.filter((v) => v !== null && v !== undefined && !Number.isNaN(v));
+      if (!nums.length) return null;
+      return nums.reduce((a, b) => a + b, 0) / nums.length;
+    }}
+
+    function weekLabels(weekStart) {{
+      return Array.from({{ length: 7 }}, (_, i) => addDays(weekStart, i));
+    }}
+
+    function weekRows(weekStart) {{
+      const labels = weekLabels(weekStart);
+      const weekEnd = labels[6];
+      return HISTORY.filter((row) => row.date >= weekStart && row.date <= weekEnd);
+    }}
+
+    function makeLineDatasets(rows, labels, rateKey, numKey, denKey) {{
+      return SEGMENTS.map((seg) => {{
+        const segRows = rows.filter((row) => row.segment === seg);
+        const rateMap = Object.fromEntries(segRows.map((row) => [row.date, row[rateKey]]));
+        const numMap = Object.fromEntries(segRows.map((row) => [row.date, row[numKey]]));
+        const denMap = Object.fromEntries(segRows.map((row) => [row.date, row[denKey]]));
+        return {{
+          label: seg,
+          data: labels.map((d) => {{
+            const val = rateMap[d];
+            return val === null || val === undefined ? 0 : Math.round(val * 10000) / 100;
+          }}),
+          nums: labels.map((d) => (numMap[d] === null || numMap[d] === undefined ? null : Math.round(numMap[d]))),
+          dens: labels.map((d) => (denMap[d] === null || denMap[d] === undefined ? null : Math.round(denMap[d]))),
+          borderColor: SEG_COLORS[seg] || "#334155",
+          backgroundColor: SEG_COLORS[seg] || "#334155",
+          tension: 0.25,
+        }};
+      }});
+    }}
+
+    function renderCards(rows) {{
+      const container = document.getElementById("weeklyCards");
+      container.innerHTML = SEGMENTS.map((seg) => {{
+        const segRows = rows.filter((row) => row.segment === seg);
+        const cardCls = "weekly-" + (SEGMENT_KEYS[seg] || "");
+        if (!segRows.length) {{
+          return `<div class="weekly-card ${{cardCls}}"><div class="weekly-seg">${{seg}}</div><div class="weekly-kpi">该周暂无数据</div></div>`;
+        }}
+        const gweiAvg = avg(segRows.map((row) => row.gwei_rate));
+        const mobileAvg = avg(segRows.map((row) => row.mobile_rate));
+        const pcAvg = avg(segRows.map((row) => row.pc_rate));
+        const authAvg = avg(segRows.map((row) => row.auth_rate));
+        return `<div class="weekly-card ${{cardCls}}">
+          <div class="weekly-seg">${{seg}}</div>
+          <div class="weekly-kpi">个微在线均值：<span class="kpi-value${{kpiClass(gweiAvg)}}">${{pct(gweiAvg)}}</span></div>
+          <div class="weekly-kpi">手机端在线均值：<span class="kpi-value${{kpiClass(mobileAvg)}}">${{pct(mobileAvg)}}</span></div>
+          <div class="weekly-kpi">电脑端在线均值：<span class="kpi-value${{kpiClass(pcAvg)}}">${{pct(pcAvg)}}</span></div>
+          <div class="weekly-kpi">授权率均值：<span class="kpi-value${{kpiClass(authAvg)}}">${{pct(authAvg)}}</span></div>
+        </div>`;
+      }}).join("");
+    }}
+
+    function renderPivot(rows, labels) {{
+      const tbody = document.getElementById("weeklyPivotBody");
+      const latestByDateSeg = {{}};
+      rows.forEach((row) => {{
+        latestByDateSeg[row.date + "|" + row.segment] = row;
+      }});
+      tbody.innerHTML = labels.map((d) => {{
+        const cells = [`<td>${{d}}</td>`];
+        SEGMENTS.forEach((seg) => {{
+          const row = latestByDateSeg[d + "|" + seg];
+          if (!row) {{
+            cells.push("<td>#N/A</td><td>#N/A</td><td>#N/A</td>");
+          }} else {{
+            cells.push(
+              `<td class="rate-blue${{rateClass(row.pc_rate)}}">${{pct(row.pc_rate)}}</td>` +
+              `<td class="rate-yellow${{rateClass(row.mobile_rate)}}">${{pct(row.mobile_rate)}}</td>` +
+              `<td>${{intText(row.bad_count)}}</td>`
+            );
+          }}
+        }});
+        return `<tr>${{cells.join("")}}</tr>`;
+      }}).join("");
+    }}
+
     const tooltipCb = {{
       callbacks: {{
         label: function(ctx) {{
@@ -909,31 +996,67 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
         }}
       }}
     }};
+
     const commonOptions = {{
       responsive: true,
-      plugins: Object.assign({{ legend: {{ position: 'bottom' }} }}, tooltipCb),
+      plugins: Object.assign({{ legend: {{ position: "bottom" }} }}, tooltipCb),
       scales: {{ y: {{ min: 0, max: 100 }} }}
     }};
-    new Chart(document.getElementById('gweiTrend'), {{
-      type: 'line',
-      data: {{ labels, datasets: gweiDatasets }},
-      options: commonOptions
+
+    function ensureChart(id, labels, datasets) {{
+      if (charts[id]) {{
+        charts[id].data.labels = labels;
+        charts[id].data.datasets = datasets;
+        charts[id].update();
+        return;
+      }}
+      charts[id] = new Chart(document.getElementById(id), {{
+        type: "line",
+        data: {{ labels, datasets }},
+        options: commonOptions
+      }});
+    }}
+
+    function updateNavButtons(weekStart) {{
+      const idx = WEEK_OPTIONS.indexOf(weekStart);
+      prevWeekBtn.disabled = idx < 0 || idx >= WEEK_OPTIONS.length - 1;
+      nextWeekBtn.disabled = idx <= 0;
+    }}
+
+    function renderWeek(weekStart) {{
+      const labels = weekLabels(weekStart);
+      const rows = weekRows(weekStart);
+      document.getElementById("weekSubtitle").textContent = weekLabel(weekStart);
+      renderCards(rows);
+      renderPivot(rows, labels);
+      ensureChart("gweiTrend", labels, makeLineDatasets(rows, labels, "gwei_rate", "gwei_num", "gwei_den"));
+      ensureChart("mobileTrend", labels, makeLineDatasets(rows, labels, "mobile_rate", "mobile_num", "mobile_den"));
+      ensureChart("pcTrend", labels, makeLineDatasets(rows, labels, "pc_rate", "pc_num", "pc_den"));
+      ensureChart("authTrend", labels, makeLineDatasets(rows, labels, "auth_rate", "auth_num", "auth_den"));
+      weekSelect.value = weekStart;
+      updateNavButtons(weekStart);
+      const url = new URL(window.location.href);
+      url.searchParams.set("week", weekStart);
+      window.history.replaceState(null, "", url.toString());
+    }}
+
+    weekSelect.innerHTML = WEEK_OPTIONS.map((weekStart) => {{
+      return `<option value="${{weekStart}}">${{weekLabel(weekStart)}}</option>`;
+    }}).join("");
+
+    weekSelect.addEventListener("change", () => renderWeek(weekSelect.value));
+    prevWeekBtn.addEventListener("click", () => {{
+      const idx = WEEK_OPTIONS.indexOf(weekSelect.value);
+      if (idx >= 0 && idx < WEEK_OPTIONS.length - 1) renderWeek(WEEK_OPTIONS[idx + 1]);
     }});
-    new Chart(document.getElementById('mobileTrend'), {{
-      type: 'line',
-      data: {{ labels, datasets: mobileDatasets }},
-      options: commonOptions
+    nextWeekBtn.addEventListener("click", () => {{
+      const idx = WEEK_OPTIONS.indexOf(weekSelect.value);
+      if (idx > 0) renderWeek(WEEK_OPTIONS[idx - 1]);
     }});
-    new Chart(document.getElementById('pcTrend'), {{
-      type: 'line',
-      data: {{ labels, datasets: pcDatasets }},
-      options: commonOptions
-    }});
-    new Chart(document.getElementById('authTrend'), {{
-      type: 'line',
-      data: {{ labels, datasets: authDatasets }},
-      options: commonOptions
-    }});
+
+    const params = new URLSearchParams(window.location.search);
+    const initialWeek = params.get("week");
+    renderWeek(WEEK_OPTIONS.includes(initialWeek) ? initialWeek : DEFAULT_WEEK);
   </script>
 </body>
 </html>
