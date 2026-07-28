@@ -797,6 +797,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     history_records = prepare_history_records(history_df)
     week_options = available_week_starts(history_df, today)
     default_week = week_start_for(today).isoformat()
+    build_stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     seg_headers = "".join([f"<th colspan='3'>{seg}</th>" for seg in SEGMENTS])
     sub_headers = "".join(["<th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th>" for _ in SEGMENTS])
     return f"""
@@ -819,6 +820,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
       <button type="button" class="weekly-query-btn" id="nextWeekBtn">下一周</button>
     </div>
     <div class="dashboard-sub" id="weekSubtitle"></div>
+    <div class="dashboard-sub">页面版本：{build_stamp}</div>
     <section class="weekly-grid" id="weeklyCards"></section>
     <section class="chart-grid">
       <div class="chart-card">
