@@ -862,9 +862,13 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     const nextWeekBtn = document.getElementById("nextWeekBtn");
 
     function addDays(iso, days) {{
-      const d = new Date(iso + "T00:00:00");
-      d.setDate(d.getDate() + days);
-      return d.toISOString().slice(0, 10);
+      const parts = iso.split("-").map(Number);
+      const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+      dt.setDate(dt.getDate() + days);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const d = String(dt.getDate()).padStart(2, "0");
+      return `${{y}}-${{m}}-${{d}}`;
     }}
 
     function weekLabel(weekStart) {{
