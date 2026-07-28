@@ -18,15 +18,22 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .sheet-table .header-orange { background: #f59e0b; color: #fff; }
 .left-group { background: #fbe7cf; font-weight: 800; }
 .summary-row { background: #d9e7f7; font-weight: 800; }
-.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #1f8a3d; }
+.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #111827; }
 .rate-yellow { background: linear-gradient(90deg, #fde89f 0%, #fff9ea 100%); font-weight: 800; }
-.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #0f9d58; }
+.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #111827; }
 .rate-mint { background: linear-gradient(90deg, #b7f0df 0%, #f5fffb 100%); font-weight: 800; }
-.rate-low { color: #b91c1c !important; }
-.rate-warn { background: #f8c9d2; color: #b91c1c; font-weight: 800; }
+.rate-low { color: #b91c1c !important; background-image: none !important; background-color: #fee2e2 !important; }
+.rate-high { color: #15803d !important; background-image: none !important; background-color: #dcfce7 !important; }
 .dashboard-title { text-align: center; color: #6d28d9; font-size: 34px; margin: 8px 0 18px; }
 .dashboard-sub { text-align: center; color: #6b7280; margin-bottom: 18px; font-size: 18px; }
+.weekly-inline-link-wrap { text-align: center; margin: -8px 0 18px; }
+.weekly-inline-link { font-size: 22px; font-weight: 700; color: #2563eb; text-decoration: none; border-bottom: 2px solid #bfdbfe; padding-bottom: 2px; }
+.weekly-inline-link:hover { color: #1d4ed8; border-bottom-color: #60a5fa; }
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
+.segment-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #06b6d4; }
+.segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .card-link { text-decoration: none; color: inherit; display: block; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; padding: 12px; transition: .2s; min-height: 134px; }
@@ -41,8 +48,27 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .team-link:hover { text-decoration: underline; color: #1d4ed8; }
 .section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
 .mini-table th, .mini-table td { font-size: 28px; }
+.nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
+.weekly-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
+.weekly-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6; }
+.weekly-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 6px solid #8b5cf6; }
+.weekly-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #06b6d4; }
+.weekly-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f97316; }
+.weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
+.weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
+.kpi-value { font-weight: 800; color: #0f172a; }
+.kpi-low { color: #b91c1c; }
+.kpi-high { color: #15803d; }
+.weekly-table th, .weekly-table td { font-size: 16px; white-space: nowrap; padding: 6px 8px; }
+.chart-grid { display: grid; grid-template-columns: repeat(2, minmax(420px, 1fr)); gap: 12px; max-width: 1600px; margin: 12px auto 16px; justify-content: center; }
+.chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
+.chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
+.weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
+  .weekly-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
   .main-title { font-size: 30px; }
   .sheet-table th, .sheet-table td { font-size: 20px; }
   .page { zoom: 1; }
@@ -51,29 +77,50 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 </head>
 <body>
   <div class="page">
-    <a class="back-link" href="../xiaoduan_auth.html">← 返回小短明细页</a>
-    <h1 class="main-title">小短｜朱梦成战队 战队明细（2026-07-22）</h1>
+    <a id="backLink" class="back-link" href="../xiaoduan_auth.html">← 返回小短个微授权明细</a>
+    <h1 class="main-title">小短｜朱梦成战队 战队明细（2026-07-27）</h1>
     
 <h2 class="section-title">个微&授权明细</h2>
 <table class="sheet-table mini-table">
   <thead><tr><th>学部</th><th>年级</th><th>战队</th><th>低价课带班</th><th>全天在线</th><th>个微全天在线率</th><th>接流</th><th>授权人数</th><th>正常人数</th><th>爱芯个微授权率</th><th>个微功能正常率</th></tr></thead>
-  <tbody><tr><td>小学</td><td>全年级</td><td>朱梦成战队</td><td>2</td><td>0</td><td class="rate-blue">0.00%</td><td>2</td><td>0</td><td>0</td><td class="rate-green">0.00%</td><td class="rate-mint">0.00%</td></tr></tbody>
+  <tbody><tr><td>小学</td><td>全年级</td><td>朱梦成战队</td><td>2</td><td>1</td><td class="rate-blue">50.00%</td><td>2</td><td>2</td><td>2</td><td class="rate-green rate-high">100.00%</td><td class="rate-mint rate-high">100.00%</td></tr></tbody>
 </table>
 
     
 <h2 class="section-title">企微在线明细</h2>
 <table class="sheet-table mini-table">
   <thead><tr><th>学部</th><th>年级</th><th>战队</th><th>接流人数</th><th>电脑端全天在线人数</th><th>电脑端全天在线率</th><th>手机端全天在线人数</th><th>手机端全天在线率</th></tr></thead>
-  <tbody><tr><td>小学</td><td>全年级</td><td>朱梦成战队</td><td>2</td><td>0</td><td class="rate-blue">0.00%</td><td>0</td><td class="rate-yellow">0.00%</td></tr></tbody>
+  <tbody><tr><td>小学</td><td>全年级</td><td>朱梦成战队</td><td>2</td><td>1</td><td class="rate-blue">50.00%</td><td>1</td><td class="rate-yellow">50.00%</td></tr></tbody>
 </table>
 
     
-<h2 class="section-title">未达标名单明细</h2>
+<h2 class="section-title">全量接流名单明细</h2>
 <table class="sheet-table mini-table">
-  <thead><tr><th>学部</th><th>年级</th><th>战队</th><th>辅导姓名</th><th>企微-手机在线率</th><th>企微-电脑在线率</th><th>个微在线率</th></tr></thead>
-  <tbody><tr><td colspan="7">无数据</td></tr></tbody>
+  <thead><tr><th>学部</th><th>年级</th><th>战队</th><th>辅导姓名</th><th>企微-手机在线率</th><th>手机端不在线时段list</th><th>企微-电脑在线率</th><th>电脑端不在线时段list</th><th>个微在线率</th></tr></thead>
+  <tbody><tr><td>小学</td><td>全年级</td><td>朱梦成战队</td><td>朱梦成</td><td class="rate-yellow">61.11%</td><td>6,7,8,9,10,11,12</td><td class="rate-blue rate-low">0.00%</td><td>6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23</td><td class="rate-blue">55.56%</td></tr><tr><td>小学</td><td>全年级</td><td>朱梦成战队</td><td>禹骁原</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr></tbody>
 </table>
 
   </div>
+  <script>
+    (function() {
+      var from = new URLSearchParams(window.location.search).get("from");
+      var map = {
+        auth: "../xiaoduan_auth.html",
+        sales: "../xiaoduan_sales.html",
+        bad: "../xiaoduan_bad.html"
+      };
+      var labelMap = {
+        auth: "← 返回小短个微授权明细",
+        sales: "← 返回小短企微在线明细",
+        bad: "← 返回小短未达标名单"
+      };
+      var key = map[from] ? from : "auth";
+      var back = document.getElementById("backLink");
+      if (back) {
+        back.setAttribute("href", map[key]);
+        back.textContent = labelMap[key];
+      }
+    })();
+  </script>
 </body>
 </html>
