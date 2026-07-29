@@ -65,6 +65,12 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
 .chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
 .weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
+.weekly-query-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; }
+.weekly-query-bar label { font-size: 16px; font-weight: 700; color: #334155; }
+.weekly-query-bar select { min-width: 280px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; }
+.weekly-query-btn { font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }
+.weekly-query-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+.weekly-query-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
   .weekly-grid { grid-template-columns: 1fr; }
@@ -81,24 +87,24 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
     <div class="weekly-inline-link-wrap">
       <a class="weekly-inline-link" href="周维度在线率看板.html">每周维度在线率看板（点击进入）</a>
     </div>
-    <div class="dashboard-sub">2026-07-27｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
+    <div class="dashboard-sub">2026-07-28｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
     
 <section class="segment-block segment-chuduan1">
   <h2 class="segment-name">初短一部</h2>
   <div class="cards">
     <a class="card-link card-auth" href="每日三表汇总看板_详情/chuduan1_auth.html">
       <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">65.00%</div>
+      <div class="card-value">64.08%</div>
       <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
     </a>
     <a class="card-link card-online" href="每日三表汇总看板_详情/chuduan1_sales.html">
       <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">58.75%</div>
-      <div class="card-sub">电脑端：91.50%｜手机端：26.00%</div>
+      <div class="card-value">54.61%</div>
+      <div class="card-sub">电脑端：85.44%｜手机端：23.79%</div>
     </a>
     <a class="card-link card-bad" href="每日三表汇总看板_详情/chuduan1_bad.html">
       <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">170</div>
+      <div class="card-value">173</div>
       <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
     </a>
   </div>
@@ -109,17 +115,17 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
   <div class="cards">
     <a class="card-link card-auth" href="每日三表汇总看板_详情/chuduan2_auth.html">
       <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">93.29%</div>
+      <div class="card-value">92.68%</div>
       <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
     </a>
     <a class="card-link card-online" href="每日三表汇总看板_详情/chuduan2_sales.html">
       <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">61.28%</div>
-      <div class="card-sub">电脑端：92.68%｜手机端：29.88%</div>
+      <div class="card-value">61.89%</div>
+      <div class="card-sub">电脑端：91.46%｜手机端：32.32%</div>
     </a>
     <a class="card-link card-bad" href="每日三表汇总看板_详情/chuduan2_bad.html">
       <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">139</div>
+      <div class="card-value">137</div>
       <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
     </a>
   </div>
@@ -135,12 +141,12 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
     </a>
     <a class="card-link card-online" href="每日三表汇总看板_详情/xiaoduan_sales.html">
       <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">76.19%</div>
-      <div class="card-sub">电脑端：80.95%｜手机端：71.43%</div>
+      <div class="card-value">71.43%</div>
+      <div class="card-sub">电脑端：80.95%｜手机端：61.90%</div>
     </a>
     <a class="card-link card-bad" href="每日三表汇总看板_详情/xiaoduan_bad.html">
       <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">14</div>
+      <div class="card-value">18</div>
       <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
     </a>
   </div>
@@ -151,17 +157,17 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
   <div class="cards">
     <a class="card-link card-auth" href="每日三表汇总看板_详情/gaoduan_auth.html">
       <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">85.25%</div>
+      <div class="card-value">83.46%</div>
       <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
     </a>
     <a class="card-link card-online" href="每日三表汇总看板_详情/gaoduan_sales.html">
       <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">67.21%</div>
-      <div class="card-sub">电脑端：81.97%｜手机端：52.46%</div>
+      <div class="card-value">62.20%</div>
+      <div class="card-sub">电脑端：76.38%｜手机端：48.03%</div>
     </a>
     <a class="card-link card-bad" href="每日三表汇总看板_详情/gaoduan_bad.html">
       <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">89</div>
+      <div class="card-value">96</div>
       <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
     </a>
   </div>

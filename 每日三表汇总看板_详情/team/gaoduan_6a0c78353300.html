@@ -65,6 +65,12 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
 .chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
 .weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
+.weekly-query-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; }
+.weekly-query-bar label { font-size: 16px; font-weight: 700; color: #334155; }
+.weekly-query-bar select { min-width: 280px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; }
+.weekly-query-btn { font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }
+.weekly-query-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+.weekly-query-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
   .weekly-grid { grid-template-columns: 1fr; }
@@ -78,7 +84,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 <body>
   <div class="page">
     <a id="backLink" class="back-link" href="../gaoduan_auth.html">← 返回高短个微授权明细</a>
-    <h1 class="main-title">高短｜溯川向上-刘炎鹤 战队明细（2026-07-27）</h1>
+    <h1 class="main-title">高短｜溯川向上-刘炎鹤 战队明细（2026-07-28）</h1>
     
 <h2 class="section-title">个微&授权明细</h2>
 <table class="sheet-table mini-table">
@@ -90,14 +96,14 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 <h2 class="section-title">企微在线明细</h2>
 <table class="sheet-table mini-table">
   <thead><tr><th>学部</th><th>年级</th><th>战队</th><th>接流人数</th><th>电脑端全天在线人数</th><th>电脑端全天在线率</th><th>手机端全天在线人数</th><th>手机端全天在线率</th></tr></thead>
-  <tbody><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>9</td><td>8</td><td class="rate-blue rate-high">88.89%</td><td>6</td><td class="rate-yellow">66.67%</td></tr></tbody>
+  <tbody><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>9</td><td>9</td><td class="rate-blue rate-high">100.00%</td><td>9</td><td class="rate-yellow rate-high">100.00%</td></tr></tbody>
 </table>
 
     
 <h2 class="section-title">全量接流名单明细</h2>
 <table class="sheet-table mini-table">
   <thead><tr><th>学部</th><th>年级</th><th>战队</th><th>辅导姓名</th><th>企微-手机在线率</th><th>手机端不在线时段list</th><th>企微-电脑在线率</th><th>电脑端不在线时段list</th><th>个微在线率</th></tr></thead>
-  <tbody><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>于香</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>刘传波</td><td class="rate-yellow rate-high">88.89%</td><td>11,12</td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-low">0.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>刘炎鹤</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>尚俊逸</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>李珂珂</td><td class="rate-yellow rate-high">83.33%</td><td>10,18,19</td><td class="rate-blue">77.78%</td><td>6,7,8,9</td><td class="rate-blue rate-high">83.33%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>杨靖宇</td><td class="rate-yellow rate-high">83.33%</td><td>19,20,21</td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">83.33%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>范春艳</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>许圣虎</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>高冲</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">88.89%</td></tr></tbody>
+  <tbody><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>于香</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>刘传波</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-low">0.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>刘炎鹤</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">88.89%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>尚俊逸</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">94.44%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>李珂珂</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>杨靖宇</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>范春艳</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>许圣虎</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">88.89%</td></tr><tr><td>高短</td><td>高二</td><td>溯川向上-刘炎鹤</td><td>高冲</td><td class="rate-yellow rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td><td></td><td class="rate-blue rate-high">100.00%</td></tr></tbody>
 </table>
 
   </div>

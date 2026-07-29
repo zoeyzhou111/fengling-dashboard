@@ -65,6 +65,12 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
 .chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
 .weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
+.weekly-query-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; }
+.weekly-query-bar label { font-size: 16px; font-weight: 700; color: #334155; }
+.weekly-query-bar select { min-width: 280px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; }
+.weekly-query-btn { font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }
+.weekly-query-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+.weekly-query-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (max-width: 1200px) {
   .cards { grid-template-columns: 1fr; }
   .weekly-grid { grid-template-columns: 1fr; }
@@ -78,7 +84,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 <body>
   <div class="page">
     <a id="backLink" class="back-link" href="../xiaoduan_auth.html">← 返回小短个微授权明细</a>
-    <h1 class="main-title">小短｜吕志恒战队 战队明细（2026-07-27）</h1>
+    <h1 class="main-title">小短｜吕志恒战队 战队明细（2026-07-28）</h1>
     
 <h2 class="section-title">个微&授权明细</h2>
 <table class="sheet-table mini-table">
