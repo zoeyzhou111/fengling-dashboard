@@ -5,7 +5,7 @@ set -euo pipefail
 # 1) Auto-detect latest 4 source Excel files from Downloads
 # 2) Regenerate daily Excel outputs
 # 3) Regenerate web dashboard pages
-# 4) Git add/commit/push for Netlify auto-deploy
+# 4) Git add/commit/push for GitHub Pages auto-deploy
 #
 # Usage:
 #   ./update_and_publish.sh
@@ -96,12 +96,12 @@ run_cmd "cd \"$ROOT_DIR\" && python3 \"build_daily_web_dashboard.py\""
 
 echo "== Step 3: git add/commit/push =="
 if [[ "$DRY_RUN" == "1" ]]; then
-  echo "[DRY_RUN] cd \"$ROOT_DIR\" && git add \".gitignore\" \"build_daily_web_dashboard.py\" \"generate_daily_reports.py\" \"update_and_publish.sh\" \"每日三表汇总看板.html\" \"周维度在线率看板.html\" \"dashboard_history.csv\" \"每日三表汇总看板_详情\" \"index.html\""
+  echo "[DRY_RUN] cd \"$ROOT_DIR\" && git add \".gitignore\" \".nojekyll\" \"build_daily_web_dashboard.py\" \"generate_daily_reports.py\" \"update_and_publish.sh\" \"每日三表汇总看板.html\" \"周维度在线率看板.html\" \"dashboard_history.csv\" \"每日三表汇总看板_详情\" \"index.html\""
   echo "[DRY_RUN] cd \"$ROOT_DIR\" && git diff --cached --quiet || git commit -m \"update daily dashboard $(date +%F)\""
   echo "[DRY_RUN] cd \"$ROOT_DIR\" && git -c http.version=HTTP/1.1 push"
 else
   cd "$ROOT_DIR"
-  git add ".gitignore" "build_daily_web_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "每日三表汇总看板.html" "周维度在线率看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
+  git add ".gitignore" ".nojekyll" "build_daily_web_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "每日三表汇总看板.html" "周维度在线率看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
   if git diff --cached --quiet; then
     echo "没有检测到需要提交的更新，跳过 commit/push。"
     exit 0
@@ -111,7 +111,7 @@ else
 fi
 
 echo "== Done =="
-echo "固定链接: https://fengling-dashboard.netlify.app"
+echo "固定链接: https://zoeyzhou111.github.io/fengling-dashboard/"
 
 echo "== Post-check: remaining local changes =="
 if [[ "$DRY_RUN" == "1" ]]; then
