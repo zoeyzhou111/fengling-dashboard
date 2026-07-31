@@ -678,7 +678,8 @@ def build_metrics(bundle: DataBundle, segment: str):
     func = func[["学部", "年级", "战队", "低价课带班", "全天在线", "个微全天在线率", "接流", "授权人数", "正常人数", "爱芯个微授权率", "个微功能正常率"]]
     func = drop_wrong_grade_team_rows(func)
 
-    online_counts = sales_low.groupby(keys, as_index=False).agg(
+    # 企微在线人数按战队全量销售明细统计，避免接流含授权名单但在线只算低价课导致口径不一致
+    online_counts = sales.groupby(keys, as_index=False).agg(
         电脑端全天在线人数=("pc在线率", lambda s: int((pd.to_numeric(s, errors="coerce") >= 1).sum())),
         手机端全天在线人数=("app在线率", lambda s: int((pd.to_numeric(s, errors="coerce") >= 1).sum())),
     )
