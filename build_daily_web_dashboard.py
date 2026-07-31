@@ -32,17 +32,30 @@ GAODUAN_TEAM_GRADE_FIX = {
 
 
 def remove_wrong_grade_duplicates(df: pd.DataFrame, team_grade_map: Dict[str, str]) -> pd.DataFrame:
+    """Keep one row per corrected team; drop only true duplicate wrong-grade rows."""
     if df.empty or "战队" not in df.columns or "年级" not in df.columns:
         return df
     out = df.reset_index(drop=True).copy()
     for team_name, target_grade in team_grade_map.items():
         team = out["战队"].astype(str).str.strip()
+        grade = out["年级"].astype(str).str.strip().replace("nan", "")
+        is_summary = grade.str.contains("汇总", na=False)
+        detail_mask = team.eq(team_name) & ~is_summary
+        if not detail_mask.any():
+            continue
+
+        blank_mask = detail_mask & (grade.eq("") | out["年级"].isna())
+        out.loc[blank_mask, "年级"] = target_grade
+
         grade = out["年级"].astype(str).str.strip()
-        wrong = team.eq(team_name) & grade.ne(target_grade) & ~grade.str.contains("汇总", na=False)
-        out = out.loc[~wrong].copy()
-        hit = out["战队"].astype(str).str.strip().eq(team_name) & ~out["年级"].astype(str).str.contains("汇总", na=False)
-        if hit.any():
-            out.loc[hit, "年级"] = target_grade
+        detail_mask = team.eq(team_name) & ~grade.str.contains("汇总", na=False)
+        target_mask = detail_mask & grade.eq(target_grade)
+        wrong_mask = detail_mask & grade.ne(target_grade)
+
+        if target_mask.any() and wrong_mask.any():
+            out = out.loc[~wrong_mask].copy()
+        elif wrong_mask.any():
+            out.loc[wrong_mask, "年级"] = target_grade
     return out
 
 

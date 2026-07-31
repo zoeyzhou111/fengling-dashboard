@@ -18,7 +18,7 @@ from openpyxl.utils import get_column_letter, range_boundaries
 SEGMENTS = ["初短一部", "初短二部", "小短", "高短"]
 XINGHUO_TEAM_ALLOWLIST = {"星火先锋-秦智豪"}
 TEAM_GRADE_OVERRIDE = {
-    "溯川向上-刘炎鹤": "高一",
+    "溯川向上-刘炎鹤": "高二",
     "薪耀巅峰-李新": "高二",
 }
 
