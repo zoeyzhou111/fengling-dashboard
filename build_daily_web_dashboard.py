@@ -25,6 +25,25 @@ SEGMENT_KEYS = {
     "小短": "xiaoduan",
     "高短": "gaoduan",
 }
+GAODUAN_TEAM_GRADE_FIX = {
+    "溯川向上-刘炎鹤": "高二",
+    "薪耀巅峰-李新": "高二",
+}
+
+
+def remove_wrong_grade_duplicates(df: pd.DataFrame, team_grade_map: Dict[str, str]) -> pd.DataFrame:
+    if df.empty or "战队" not in df.columns or "年级" not in df.columns:
+        return df
+    out = df.reset_index(drop=True).copy()
+    for team_name, target_grade in team_grade_map.items():
+        team = out["战队"].astype(str).str.strip()
+        grade = out["年级"].astype(str).str.strip()
+        wrong = team.eq(team_name) & grade.ne(target_grade) & ~grade.str.contains("汇总", na=False)
+        out = out.loc[~wrong].copy()
+        hit = out["战队"].astype(str).str.strip().eq(team_name) & ~out["年级"].astype(str).str.contains("汇总", na=False)
+        if hit.any():
+            out.loc[hit, "年级"] = target_grade
+    return out
 
 
 def _grade_order_key(grade_value: object) -> int:
@@ -354,6 +373,9 @@ def auth_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: s
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>{title}</title>
   <style>{base_styles(scale=0.5)}</style>
 </head>
@@ -415,6 +437,9 @@ def sales_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>{title}</title>
   <style>{base_styles(scale=0.5)}</style>
 </head>
@@ -485,6 +510,9 @@ def bad_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: st
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>{title}</title>
   <style>{base_styles(scale=0.5)}</style>
 </head>
@@ -1155,6 +1183,10 @@ def main() -> None:
         auth = auth.dropna(how="all")
         sales = sales.dropna(how="all")
         bad = bad.dropna(how="all")
+
+        if segment == "高短":
+            auth = remove_wrong_grade_duplicates(auth, GAODUAN_TEAM_GRADE_FIX)
+            sales = remove_wrong_grade_duplicates(sales, GAODUAN_TEAM_GRADE_FIX)
 
         bad = bad[
             [

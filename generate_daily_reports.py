@@ -70,6 +70,20 @@ def apply_team_grade_override(df: pd.DataFrame, team_col: str = "战队", grade_
     return df
 
 
+def drop_wrong_grade_team_rows(df: pd.DataFrame, team_col: str = "战队", grade_col: str = "年级") -> pd.DataFrame:
+    """Remove duplicate team rows left on non-target grades after multi-source merges."""
+    if df.empty or team_col not in df.columns or grade_col not in df.columns:
+        return df
+    data = df.copy()
+    team_norm = data[team_col].astype(str).str.replace("——", "-", regex=False).str.replace("--", "-", regex=False)
+    grade_norm = data[grade_col].astype(str).str.strip()
+    keep = pd.Series(True, index=data.index)
+    for team_name, target_grade in TEAM_GRADE_OVERRIDE.items():
+        wrong = team_norm.eq(team_name) & grade_norm.ne(target_grade) & ~grade_norm.str.contains("汇总", na=False)
+        keep &= ~wrong
+    return data[keep].copy()
+
+
 def norm_school(grade, src=None, xuebu=None):
     g = str(grade) if pd.notna(grade) else ""
     if g == "新兵营":
@@ -662,6 +676,7 @@ def build_metrics(bundle: DataBundle, segment: str):
     func["爱芯个微授权率"] = [safe_div(a, b) for a, b in zip(func["授权人数"], func["低价课带班"])]
     func["个微功能正常率"] = [safe_div(a, b) for a, b in zip(func["正常人数"], func["授权人数"])]
     func = func[["学部", "年级", "战队", "低价课带班", "全天在线", "个微全天在线率", "接流", "授权人数", "正常人数", "爱芯个微授权率", "个微功能正常率"]]
+    func = drop_wrong_grade_team_rows(func)
 
     online_counts = sales_low.groupby(keys, as_index=False).agg(
         电脑端全天在线人数=("pc在线率", lambda s: int((pd.to_numeric(s, errors="coerce") >= 1).sum())),
@@ -675,6 +690,7 @@ def build_metrics(bundle: DataBundle, segment: str):
     online["电脑端全天在线率"] = [safe_div(a, b) for a, b in zip(online["电脑端全天在线人数"], online["接流人数"])]
     online["手机端全天在线率"] = [safe_div(a, b) for a, b in zip(online["手机端全天在线人数"], online["接流人数"])]
     online = online[["学部", "年级", "战队", "接流人数", "电脑端全天在线人数", "电脑端全天在线率", "手机端全天在线人数", "手机端全天在线率"]]
+    online = drop_wrong_grade_team_rows(online)
 
     bad_base = sales_low[["学部", "年级", "战队", "老师姓名", "app在线率", "pc在线率"]].copy()
     wx_d = wechat_detail[["学部", "年级", "战队", "辅导姓名", "风灵微信在线率"]].copy()
