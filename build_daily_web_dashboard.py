@@ -58,7 +58,7 @@ def sort_gaoduan_auth_sales(df: pd.DataFrame) -> pd.DataFrame:
             logical_grade = grade_raw if (grade_raw and grade_raw.lower() != "nan") else current_grade
             kind = "detail"
 
-        if team_raw == "溯川向上-刘炎鹤":
+        if team_raw in ("溯川向上-刘炎鹤", "薪耀巅峰-李新"):
             logical_grade = "高二"
             if kind == "detail":
                 row["年级"] = "高二"
@@ -1268,12 +1268,13 @@ def main() -> None:
 
             # For auth/sales: only relocate this one team during render sorting.
             # For bad list: write back grade directly since all rows are detail rows.
-            bad_mask = bad["战队"].astype(str).str.strip().eq("溯川向上-刘炎鹤")
-            if bad_mask.any():
-                bad.loc[bad_mask, "年级"] = "高二"
-            roster_mask = roster["战队"].astype(str).str.strip().eq("溯川向上-刘炎鹤")
-            if roster_mask.any():
-                roster.loc[roster_mask, "年级"] = "高二"
+            for team_name in ("溯川向上-刘炎鹤", "薪耀巅峰-李新"):
+                bad_mask = bad["战队"].astype(str).str.strip().eq(team_name)
+                if bad_mask.any():
+                    bad.loc[bad_mask, "年级"] = "高二"
+                roster_mask = roster["战队"].astype(str).str.strip().eq(team_name)
+                if roster_mask.any():
+                    roster.loc[roster_mask, "年级"] = "高二"
             auth = sort_gaoduan_auth_sales(auth)
             sales = sort_gaoduan_auth_sales(sales)
             bad = sort_gaoduan_bad(bad)
