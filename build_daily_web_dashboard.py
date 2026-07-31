@@ -9,6 +9,8 @@ from html import escape
 
 import pandas as pd
 
+from generate_daily_reports import expand_with_summary
+
 
 ROOT = Path("/Users/zoeyzhou/Desktop/工作/风灵数据")
 OUTPUT_ROOT = ROOT / "每日输出"
@@ -57,6 +59,20 @@ def remove_wrong_grade_duplicates(df: pd.DataFrame, team_grade_map: Dict[str, st
         elif wrong_mask.any():
             out.loc[wrong_mask, "年级"] = target_grade
     return out
+
+
+def load_auth_table(auth_file: Path) -> pd.DataFrame:
+    """Load auth metrics from pivot sheets to avoid blank grades in 数据公示表."""
+    xl = pd.ExcelFile(auth_file)
+    if "个微数据透视表" in xl.sheet_names and "爱芯透视" in xl.sheet_names:
+        wx_pvt = pd.read_excel(auth_file, sheet_name="个微数据透视表")
+        auth_pvt = pd.read_excel(auth_file, sheet_name="爱芯透视")
+        auth_base = pd.merge(wx_pvt, auth_pvt, on=["学部", "年级", "战队"], how="outer")
+        return expand_with_summary(
+            auth_base,
+            metrics=["低价课带班", "全天在线", "接流", "授权人数", "正常人数"],
+        )
+    return pd.read_excel(auth_file, sheet_name="数据公示表", header=1).dropna(how="all")
 
 
 def _grade_order_key(grade_value: object) -> int:
@@ -1186,7 +1202,7 @@ def main() -> None:
         sales_file = seg_dir / f"郑州-{segment}-销售风灵在线率明细数据.xlsx"
         bad_file = seg_dir / f"郑州-{segment}-每日风灵不在线.xlsx"
 
-        auth = pd.read_excel(auth_file, sheet_name="数据公示表", header=1)
+        auth = load_auth_table(auth_file)
         gwei_origin = pd.read_excel(auth_file, sheet_name="个微在线源数据")
         sales = pd.read_excel(sales_file, sheet_name="战队汇总透视")
         sales_origin = pd.read_excel(sales_file, sheet_name="销售风灵在线率明细数据")
@@ -1198,7 +1214,6 @@ def main() -> None:
         bad = bad.dropna(how="all")
 
         if segment == "高短":
-            auth = remove_wrong_grade_duplicates(auth, GAODUAN_TEAM_GRADE_FIX)
             sales = remove_wrong_grade_duplicates(sales, GAODUAN_TEAM_GRADE_FIX)
 
         bad = bad[
