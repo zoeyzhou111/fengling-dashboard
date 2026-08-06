@@ -12,13 +12,15 @@ import pandas as pd
 from generate_daily_reports import expand_with_summary
 
 
-ROOT = Path("/Users/zoeyzhou/Desktop/工作/风灵数据")
+ROOT = Path(__file__).resolve().parent
 OUTPUT_ROOT = ROOT / "每日输出"
 INDEX_HTML = ROOT / "每日三表汇总看板.html"
 DETAIL_DIR = ROOT / "每日三表汇总看板_详情"
 TEAM_DETAIL_DIR = DETAIL_DIR / "team"
 WEEKLY_HTML = ROOT / "周维度在线率看板.html"
+VISIT_STATS_HTML = ROOT / "访问统计看板.html"
 HISTORY_CSV = ROOT / "dashboard_history.csv"
+CONFIG_ENV = ROOT / "config.env"
 
 SEGMENTS = ["初短一部", "初短二部", "小短", "高短"]
 SEGMENT_KEYS = {
@@ -31,6 +33,163 @@ GAODUAN_TEAM_GRADE_FIX = {
     "溯川向上-刘炎鹤": "高二",
     "薪耀巅峰-李新": "高二",
 }
+
+_DASHBOARD_CONFIG: Dict[str, str] | None = None
+
+
+def load_dashboard_config() -> Dict[str, str]:
+    cfg: Dict[str, str] = {}
+    if not CONFIG_ENV.exists():
+        return cfg
+    for line in CONFIG_ENV.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            cfg[key] = value
+    return cfg
+
+
+def dashboard_config() -> Dict[str, str]:
+    global _DASHBOARD_CONFIG
+    if _DASHBOARD_CONFIG is None:
+        _DASHBOARD_CONFIG = load_dashboard_config()
+    return _DASHBOARD_CONFIG
+
+
+def analytics_head_html(page_title: str = "") -> str:
+    cfg = dashboard_config()
+    parts: List[str] = []
+    ga_id = (cfg.get("GA4_MEASUREMENT_ID") or cfg.get("GA_MEASUREMENT_ID") or "").strip()
+    if ga_id:
+        safe_title = escape(page_title.replace("'", ""))
+        parts.append(
+            f"""<script async src="https://www.googletagmanager.com/gtag/js?id={escape(ga_id)}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('js', new Date());
+  gtag('config', '{escape(ga_id)}', {{'page_title': '{safe_title}'}});
+</script>"""
+        )
+    baidu_id = cfg.get("BAIDU_SITE_ID", "").strip()
+    if baidu_id:
+        parts.append(
+            f"""<script>
+var _hmt = _hmt || [];
+(function() {{
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?{escape(baidu_id)}";
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(hm, s);
+}})();
+</script>"""
+        )
+    goat = cfg.get("GOATCOUNTER_SITE", "").strip()
+    if goat:
+        goat_host = goat.replace("https://", "").replace("http://", "").rstrip("/")
+        parts.append(
+            f'<script data-goatcounter="https://{escape(goat_host)}/count" async src="//gc.zgo.at/count.js"></script>'
+        )
+    counter = cfg.get("VISIT_COUNTER", "").strip().lower()
+    if counter == "busuanzi":
+        parts.append(
+            '<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>'
+        )
+    return "\n  ".join(parts)
+
+
+def visit_stats_configured() -> bool:
+    cfg = dashboard_config()
+    if (cfg.get("GA4_MEASUREMENT_ID") or cfg.get("GA_MEASUREMENT_ID") or "").strip():
+        return True
+    if cfg.get("BAIDU_SITE_ID", "").strip():
+        return True
+    if cfg.get("GOATCOUNTER_SITE", "").strip():
+        return True
+    if cfg.get("VISIT_COUNTER", "").strip().lower() == "busuanzi":
+        return True
+    return False
+
+
+def build_visit_stats_page() -> str:
+    cfg = dashboard_config()
+    ga_id = (cfg.get("GA4_MEASUREMENT_ID") or cfg.get("GA_MEASUREMENT_ID") or "").strip()
+    baidu_id = cfg.get("BAIDU_SITE_ID", "").strip()
+    goat = cfg.get("GOATCOUNTER_SITE", "").strip()
+    counter = cfg.get("VISIT_COUNTER", "").strip().lower()
+
+    stats_blocks: List[str] = []
+    if counter == "busuanzi":
+        stats_blocks.append(
+            """
+    <div class="stats-card">
+      <h2 class="stats-card-title">本站概览（不蒜子）</h2>
+      <p>总访问量：<span id="busuanzi_value_site_pv" class="stats-num">-</span> 次</p>
+      <p>访客人数：<span id="busuanzi_value_site_uv" class="stats-num">-</span> 人</p>
+      <p class="stats-note">数据由第三方不蒜子统计，可能有 1～2 小时延迟。</p>
+    </div>"""
+        )
+
+    links: List[str] = []
+    if ga_id:
+        links.append(
+            '<a class="stats-link" href="https://analytics.google.com/" target="_blank" rel="noopener">打开 Google Analytics 控制台</a>'
+        )
+    if baidu_id:
+        links.append(
+            '<a class="stats-link" href="https://tongji.baidu.com/" target="_blank" rel="noopener">打开百度统计控制台</a>'
+        )
+    if goat:
+        goat_url = goat if goat.startswith("http") else f"https://{goat}"
+        links.append(
+            f'<a class="stats-link" href="{escape(goat_url)}" target="_blank" rel="noopener">打开 GoatCounter 统计页</a>'
+        )
+
+    if links:
+        links_html = "".join(f"<li>{link}</li>" for link in links)
+    else:
+        links_html = (
+            "<li>尚未配置 GA4 / 百度统计 / GoatCounter。请在 <code>config.env</code> 中填写对应 ID（见 <code>config.env.example</code>）。</li>"
+        )
+
+    if not visit_stats_configured():
+        hint = (
+            '<div class="dashboard-sub">当前未启用访问统计。复制 <code>config.env.example</code> 为 <code>config.env</code>，'
+            "填写统计 ID 后重新执行「一键更新并发布」即可。</div>"
+        )
+    else:
+        hint = ""
+
+    return f"""
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>访问统计看板</title>
+  <style>{base_styles(scale=1.0)}</style>
+  {analytics_head_html("访问统计看板")}
+</head>
+<body>
+  <div class="page">
+    <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
+    <h1 class="dashboard-title">看板访问统计</h1>
+    {hint}
+    <div class="dashboard-sub">汇总各页面的访问量与访客数据（需在 config.env 中配置统计服务）</div>
+    {''.join(stats_blocks)}
+    <div class="stats-card">
+      <h2 class="stats-card-title">详细分析入口</h2>
+      <ul class="stats-link-list">{links_html}</ul>
+      <p class="stats-note">GA4 / 百度统计可查看页面路径、来源、设备等明细；GoatCounter 提供轻量页面访问趋势。</p>
+    </div>
+  </div>
+</body>
+</html>
+"""
 
 
 def remove_wrong_grade_duplicates(df: pd.DataFrame, team_grade_map: Dict[str, str]) -> pd.DataFrame:
@@ -407,6 +566,7 @@ def auth_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: s
   <meta http-equiv="Expires" content="0" />
   <title>{title}</title>
   <style>{base_styles(scale=0.5)}</style>
+  {analytics_head_html(title)}
 </head>
 <body>
   <div class="page">
@@ -471,6 +631,7 @@ def sales_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: 
   <meta http-equiv="Expires" content="0" />
   <title>{title}</title>
   <style>{base_styles(scale=0.5)}</style>
+  {analytics_head_html(title)}
 </head>
 <body>
   <div class="page">
@@ -544,6 +705,7 @@ def bad_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: st
   <meta http-equiv="Expires" content="0" />
   <title>{title}</title>
   <style>{base_styles(scale=0.5)}</style>
+  {analytics_head_html(title)}
 </head>
 <body>
   <div class="page">
@@ -590,6 +752,14 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .weekly-inline-link-wrap { text-align: center; margin: -8px 0 18px; }
 .weekly-inline-link { font-size: 22px; font-weight: 700; color: #2563eb; text-decoration: none; border-bottom: 2px solid #bfdbfe; padding-bottom: 2px; }
 .weekly-inline-link:hover { color: #1d4ed8; border-bottom-color: #60a5fa; }
+.weekly-inline-sep { color: #94a3b8; font-size: 18px; margin: 0 4px; }
+.stats-card { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px 18px; margin: 14px 0; max-width: 720px; }
+.stats-card-title { margin: 0 0 10px; font-size: 22px; color: #0f172a; }
+.stats-num { font-size: 34px; font-weight: 800; color: #1d4ed8; }
+.stats-note { color: #64748b; font-size: 14px; margin-top: 10px; }
+.stats-link-list { margin: 0; padding-left: 20px; line-height: 2; }
+.stats-link { color: #1d4ed8; font-weight: 700; text-decoration: none; }
+.stats-link:hover { text-decoration: underline; }
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
 .segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
 .segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
@@ -705,6 +875,7 @@ def team_detail_html(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{segment}-{team_name} 战队明细</title>
   <style>{base_styles(scale=0.5)}</style>
+  {analytics_head_html(f"{segment}-{team_name}")}
 </head>
 <body>
   <div class="page">
@@ -841,6 +1012,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>周维度在线率看板</title>
   <style>{base_styles(scale=1.0)}</style>
+  {analytics_head_html("周维度在线率看板")}
 </head>
 <body>
   <div class="page">
@@ -865,6 +1037,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>周维度在线率看板</title>
   <style>{base_styles(scale=1.0)}</style>
+  {analytics_head_html("周维度在线率看板")}
 </head>
 <body>
   <div class="page">
@@ -1175,12 +1348,15 @@ def build_index_page(summary_rows: List[dict], date_text: str) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>每日三表汇总看板</title>
   <style>{base_styles(scale=1.0)}</style>
+  {analytics_head_html("每日三表汇总看板")}
 </head>
 <body>
   <div class="page">
     <h1 class="dashboard-title">每日三表汇总看板（郑州）</h1>
     <div class="weekly-inline-link-wrap">
       <a class="weekly-inline-link" href="周维度在线率看板.html">每周维度在线率看板（点击进入）</a>
+      <span class="weekly-inline-sep">｜</span>
+      <a class="weekly-inline-link" href="访问统计看板.html">看板访问统计（点击进入）</a>
     </div>
     <div class="dashboard-sub">{date_text}｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
     {''.join(segment_html)}
@@ -1448,10 +1624,12 @@ def main() -> None:
 
     date_text = max(all_dates) if all_dates else ""
     INDEX_HTML.write_text(build_index_page(summary_rows, date_text), encoding="utf-8")
+    VISIT_STATS_HTML.write_text(build_visit_stats_page(), encoding="utf-8")
     history_df = update_history(parse_date_text(date_text) if date_text else date.today(), summary_rows)
     write_weekly_dashboard(history_df, date_text)
     print(f"Generated: {INDEX_HTML}")
     print(f"Generated: {WEEKLY_HTML}")
+    print(f"Generated: {VISIT_STATS_HTML}")
     print(f"Detail pages: {DETAIL_DIR}")
     print(f"History file: {HISTORY_CSV}")
     print("[校验] 每日检查完成：已完成各学部三表数据重建与高短年级合法性检查。")

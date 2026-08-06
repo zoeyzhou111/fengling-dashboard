@@ -6,16 +6,19 @@ set -euo pipefail
 # 2) Regenerate daily Excel outputs
 # 3) Regenerate web dashboard pages
 # 4) Git add/commit/push for GitHub Pages auto-deploy
-#
-# Usage:
-#   ./update_and_publish.sh
-#   DRY_RUN=1 ./update_and_publish.sh
 
-ROOT_DIR="/Users/zoeyzhou/Desktop/工作/风灵数据"
-DOWNLOADS_DIR="/Users/zoeyzhou/Downloads"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/config.env" ]]; then
+  # shellcheck disable=SC1091
+  source "$SCRIPT_DIR/config.env"
+fi
+
+ROOT_DIR="${ROOT_DIR:-$SCRIPT_DIR}"
+DOWNLOADS_DIR="${DOWNLOADS_DIR:-$HOME/Downloads}"
 OUTPUT_ROOT="$ROOT_DIR/每日输出"
-STYLE_AUTH_TEMPLATE="/Users/zoeyzhou/Desktop/样式表2.xlsx"
-STYLE_SALES_TEMPLATE="/Users/zoeyzhou/Desktop/样式表.xlsx"
+STYLE_AUTH_TEMPLATE="${STYLE_AUTH_TEMPLATE:-$ROOT_DIR/templates/样式表2.xlsx}"
+STYLE_SALES_TEMPLATE="${STYLE_SALES_TEMPLATE:-$ROOT_DIR/templates/样式表.xlsx}"
+PAGES_URL="${PAGES_URL:-https://你的用户名.github.io/你的仓库名/}"
 
 DRY_RUN="${DRY_RUN:-0}"
 
@@ -53,7 +56,6 @@ AUTH_HIGH_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "爱芯个微授权数�
 AUTH_AIXUE_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "爱芯个微授权数据_爱学_")"
 WECHAT_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "风灵个微在线数据_")"
 
-# Ensure AUTH_HIGH does not accidentally pick the 爱学 file.
 if [[ "$AUTH_HIGH_FILE" == *"爱学"* ]]; then
   AUTH_HIGH_FILE="$(python3 - "$DOWNLOADS_DIR" <<'PY'
 import sys
@@ -96,12 +98,10 @@ run_cmd "cd \"$ROOT_DIR\" && python3 \"build_daily_web_dashboard.py\""
 
 echo "== Step 3: git add/commit/push =="
 if [[ "$DRY_RUN" == "1" ]]; then
-  echo "[DRY_RUN] cd \"$ROOT_DIR\" && git add \".gitignore\" \".nojekyll\" \"build_daily_web_dashboard.py\" \"generate_daily_reports.py\" \"update_and_publish.sh\" \"每日三表汇总看板.html\" \"周维度在线率看板.html\" \"dashboard_history.csv\" \"每日三表汇总看板_详情\" \"index.html\""
-  echo "[DRY_RUN] cd \"$ROOT_DIR\" && git diff --cached --quiet || git commit -m \"update daily dashboard $(date +%F)\""
-  echo "[DRY_RUN] cd \"$ROOT_DIR\" && git -c http.version=HTTP/1.1 push"
+  echo "[DRY_RUN] git commit/push skipped in dry run"
 else
   cd "$ROOT_DIR"
-  git add ".gitignore" ".nojekyll" "build_daily_web_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "每日三表汇总看板.html" "周维度在线率看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
+  git add ".gitignore" ".nojekyll" "build_daily_web_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "config.env.example" "每日三表汇总看板.html" "周维度在线率看板.html" "访问统计看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
   if git diff --cached --quiet; then
     echo "没有检测到需要提交的更新，跳过 commit/push。"
     exit 0
@@ -111,17 +111,13 @@ else
 fi
 
 echo "== Done =="
-echo "固定链接: https://zoeyzhou111.github.io/fengling-dashboard/"
+echo "固定链接: $PAGES_URL"
 
-echo "== Post-check: remaining local changes =="
-if [[ "$DRY_RUN" == "1" ]]; then
-  echo "[DRY_RUN] cd \"$ROOT_DIR\" && git status --porcelain"
-else
+if [[ "$DRY_RUN" != "1" ]]; then
   cd "$ROOT_DIR"
   if [[ -n "$(git status --porcelain)" ]]; then
-    echo "[提醒] 仍有未提交改动，线上可能不是最新："
+    echo "[提醒] 仍有未提交改动："
     git status -sb
-    echo "[建议] 如需同步这些改动，请执行：git add ... && git commit && git -c http.version=HTTP/1.1 push"
   else
     echo "[OK] 本地工作区干净，线上与本次提交保持一致。"
   fi
