@@ -101,7 +101,7 @@ if [[ "$DRY_RUN" == "1" ]]; then
   echo "[DRY_RUN] git commit/push skipped in dry run"
 else
   cd "$ROOT_DIR"
-  git add ".gitignore" ".nojekyll" "build_daily_web_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "config.env.example" "每日三表汇总看板.html" "周维度在线率看板.html" "访问统计看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
+  git add ".gitignore" ".nojekyll" ".github/workflows/deploy-pages.yml" "build_daily_web_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "config.env.example" "每日三表汇总看板.html" "周维度在线率看板.html" "访问统计看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
   if git diff --cached --quiet; then
     echo "没有检测到需要提交的更新，跳过 commit/push。"
     exit 0
