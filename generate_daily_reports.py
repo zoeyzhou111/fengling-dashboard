@@ -64,6 +64,24 @@ def cap_auth_counts(df: pd.DataFrame, flow_col: str = "接流") -> pd.DataFrame:
     return out
 
 
+def dedupe_auth_detail(auth_detail: pd.DataFrame) -> pd.DataFrame:
+    """同一战队+老师邮箱只保留一条，避免重复明细行重复累计授权人数。"""
+    if auth_detail.empty:
+        return auth_detail
+    work = auth_detail.copy()
+    work["老师邮箱"] = work["老师邮箱"].astype(str).str.strip().replace("nan", "")
+    keys = ["分组", "学部", "年级", "战队", "老师邮箱"]
+    agg_map: Dict[str, str] = {}
+    for col in work.columns:
+        if col in keys:
+            continue
+        if col in {"个微授权", "整体正常"}:
+            agg_map[col] = "max"
+        else:
+            agg_map[col] = "first"
+    return work.groupby(keys, as_index=False).agg(agg_map)
+
+
 def normalize_team_name(v):
     if pd.isna(v):
         return v
@@ -635,6 +653,7 @@ def load_and_prepare(
     auth_detail = auth_detail[auth_detail["分组"] != "其他"].copy()
     for c in ["个微授权", "整体正常"]:
         auth_detail[c] = pd.to_numeric(auth_detail[c], errors="coerce").fillna(0)
+    auth_detail = dedupe_auth_detail(auth_detail)
 
     return DataBundle(sales=sales, wechat_sum=wechat_sum, wechat_detail=wechat_detail, auth_detail=auth_detail)
 

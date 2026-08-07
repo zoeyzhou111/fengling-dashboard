@@ -221,16 +221,40 @@ def remove_wrong_grade_duplicates(df: pd.DataFrame, team_grade_map: Dict[str, st
 
 
 def load_auth_table(auth_file: Path) -> pd.DataFrame:
-    """Load auth metrics from pivot sheets to avoid blank grades in 数据公示表."""
+    """Load auth metrics; prefer 数据公示表 so web matches Excel display."""
+    auth_cols = [
+        "学部",
+        "年级",
+        "战队",
+        "低价课带班",
+        "全天在线",
+        "个微全天在线率",
+        "接流",
+        "授权人数",
+        "正常人数",
+        "爱芯个微授权率",
+        "个微功能正常率",
+    ]
     xl = pd.ExcelFile(auth_file)
+    if "数据公示表" in xl.sheet_names:
+        pub = pd.read_excel(auth_file, sheet_name="数据公示表", header=1).dropna(how="all")
+        if all(c in pub.columns for c in auth_cols):
+            out = pub[auth_cols].copy()
+            for c in ["个微全天在线率", "爱芯个微授权率", "个微功能正常率"]:
+                out[c] = pd.to_numeric(out[c], errors="coerce").clip(upper=1.0)
+            return out
     if "个微数据透视表" in xl.sheet_names and "爱芯透视" in xl.sheet_names:
         wx_pvt = pd.read_excel(auth_file, sheet_name="个微数据透视表")
         auth_pvt = pd.read_excel(auth_file, sheet_name="爱芯透视")
         auth_base = pd.merge(wx_pvt, auth_pvt, on=["学部", "年级", "战队"], how="outer")
-        return expand_with_summary(
+        out = expand_with_summary(
             auth_base,
             metrics=["低价课带班", "全天在线", "接流", "授权人数", "正常人数"],
         )
+        for c in ["个微全天在线率", "爱芯个微授权率", "个微功能正常率"]:
+            if c in out.columns:
+                out[c] = pd.to_numeric(out[c], errors="coerce").clip(upper=1.0)
+        return out
     return pd.read_excel(auth_file, sheet_name="数据公示表", header=1).dropna(how="all")
 
 
@@ -316,7 +340,8 @@ def safe_pct(v: object) -> str:
     if pd.isna(v) or v == "":
         return "#N/A"
     try:
-        return f"{float(v) * 100:.2f}%"
+        fv = min(float(v), 1.0)
+        return f"{fv * 100:.2f}%"
     except Exception:
         return str(v)
 
