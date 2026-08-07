@@ -29,9 +29,39 @@ def safe_div(a, b):
         b = float(b)
         if b == 0:
             return np.nan
-        return a / b
+        v = a / b
+        return min(v, 1.0) if v == v else np.nan
     except Exception:
         return np.nan
+
+
+def aggregate_auth_metrics(auth: pd.DataFrame, keys: List[str]) -> pd.DataFrame:
+    """按老师邮箱去重后再汇总，避免重复明细行把授权人数重复累加。"""
+    if auth.empty:
+        return pd.DataFrame(columns=keys + ["授权人数", "正常人数"])
+    work = auth.copy()
+    work["老师邮箱"] = work["老师邮箱"].astype(str).str.strip().replace("nan", "")
+    work = work[work["老师邮箱"] != ""]
+    per_teacher = work.groupby(keys + ["老师邮箱"], as_index=False).agg(
+        个微授权=("个微授权", "max"),
+        整体正常=("整体正常", "max"),
+    )
+    return per_teacher.groupby(keys, as_index=False).agg(
+        授权人数=("个微授权", "sum"),
+        正常人数=("整体正常", "sum"),
+    )
+
+
+def cap_auth_counts(df: pd.DataFrame, flow_col: str = "接流") -> pd.DataFrame:
+    out = df.copy()
+    if flow_col not in out.columns:
+        return out
+    flow = pd.to_numeric(out[flow_col], errors="coerce").fillna(0)
+    out["授权人数"] = pd.to_numeric(out.get("授权人数"), errors="coerce").fillna(0).clip(lower=0)
+    out["正常人数"] = pd.to_numeric(out.get("正常人数"), errors="coerce").fillna(0).clip(lower=0)
+    out["授权人数"] = np.minimum(out["授权人数"], flow)
+    out["正常人数"] = np.minimum(out["正常人数"], out["授权人数"])
+    return out
 
 
 def normalize_team_name(v):
@@ -627,7 +657,7 @@ def build_metrics(bundle: DataBundle, segment: str):
     auth_teacher_count = auth.groupby(keys, as_index=False).agg(
         接流_auth=("老师邮箱", lambda s: s.astype(str).replace("nan", np.nan).dropna().nunique())
     )
-    auth_metric = auth.groupby(keys, as_index=False).agg(授权人数=("个微授权", "sum"), 正常人数=("整体正常", "sum"))
+    auth_metric = aggregate_auth_metrics(auth, keys)
     auth_agg = pd.merge(auth_teacher_count, auth_metric, on=keys, how="outer")
 
     # 个微透视：必须由“个微在线源数据”聚合得到
@@ -670,8 +700,7 @@ def build_metrics(bundle: DataBundle, segment: str):
     func["全天在线"] = np.minimum(func["全天在线"], func["低价课带班"])
     func["授权人数"] = func["授权人数"].fillna(0).clip(lower=0)
     func["正常人数"] = func["正常人数"].fillna(0).clip(lower=0)
-    func["授权人数"] = np.minimum(func["授权人数"], func["低价课带班"])
-    func["正常人数"] = np.minimum(func["正常人数"], func["授权人数"])
+    func = cap_auth_counts(func, flow_col="低价课带班")
     func["个微全天在线率"] = [safe_div(a, b) for a, b in zip(func["全天在线"], func["低价课带班"])]
     func["爱芯个微授权率"] = [safe_div(a, b) for a, b in zip(func["授权人数"], func["低价课带班"])]
     func["个微功能正常率"] = [safe_div(a, b) for a, b in zip(func["正常人数"], func["授权人数"])]
@@ -706,6 +735,7 @@ def build_metrics(bundle: DataBundle, segment: str):
     bad = bad[["学部", "年级", "战队", "辅导姓名", "企微-手机在线率", "企微-电脑在线率", "个微在线率"]]
 
     auth_export = pd.merge(base, auth_metric, on=keys, how="left")
+    auth_export = cap_auth_counts(auth_export, flow_col="接流")
     return sales, wechat_sum, wechat_detail, auth, func, online, bad, wx_pvt, auth_export
 
 
