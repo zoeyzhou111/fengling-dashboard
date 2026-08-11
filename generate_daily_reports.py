@@ -572,6 +572,23 @@ class DataBundle:
     auth_detail: pd.DataFrame
 
 
+def filter_bundle_by_date(bundle: DataBundle, as_of: str) -> DataBundle:
+    target = pd.to_datetime(as_of).normalize()
+
+    def on_date(df: pd.DataFrame, col: str = "日期") -> pd.DataFrame:
+        if col not in df.columns or df.empty:
+            return df.copy()
+        mask = pd.to_datetime(df[col], errors="coerce").dt.normalize() == target
+        return df.loc[mask].copy()
+
+    return DataBundle(
+        sales=on_date(bundle.sales),
+        wechat_sum=on_date(bundle.wechat_sum),
+        wechat_detail=on_date(bundle.wechat_detail),
+        auth_detail=on_date(bundle.auth_detail),
+    )
+
+
 def load_and_prepare(
     sales_path: Path,
     auth_high_path: Path,
@@ -992,6 +1009,7 @@ def main():
     parser.add_argument("--output-root", required=True, help="输出根目录")
     parser.add_argument("--style-auth-template", default="", help="样式模板：风灵个微文件路径（默认用输出目录下初短二部文件）")
     parser.add_argument("--style-sales-template", default="", help="样式模板：销售风灵文件路径（默认用输出目录下初短二部文件）")
+    parser.add_argument("--as-of-date", default="", help="仅处理指定业务日期（YYYY-MM-DD），用于周维度历史回填")
     args = parser.parse_args()
 
     bundle = load_and_prepare(
@@ -1000,6 +1018,10 @@ def main():
         wechat_path=Path(args.wechat),
         auth_aixue_path=Path(args.auth_aixue),
     )
+    if args.as_of_date:
+        bundle = filter_bundle_by_date(bundle, args.as_of_date)
+        if bundle.sales.empty:
+            raise SystemExit(f"指定日期无销售数据: {args.as_of_date}")
 
     dt = pd.to_datetime(bundle.sales.get("日期"), errors="coerce").max()
     date_text = f"{dt.month}月{dt.day}日" if pd.notna(dt) else ""
