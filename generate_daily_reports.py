@@ -572,6 +572,64 @@ class DataBundle:
     auth_detail: pd.DataFrame
 
 
+SALES_DETAIL_SHEETS = ("销售风灵在线率明细数据", "学习规划师风灵在线率明细数据")
+SOURCE_LIKE_XUEDUAN = {"高中", "爱学", "初中", "小学"}
+
+
+def ensure_column(df: pd.DataFrame, target: str, *sources: str) -> pd.DataFrame:
+    out = df.copy()
+    if target in out.columns:
+        return out
+    for src in sources:
+        if src in out.columns:
+            out[target] = out[src]
+            return out
+    return out
+
+
+def read_sales_detail(sales_path: Path) -> pd.DataFrame:
+    xls = pd.ExcelFile(sales_path)
+    for sheet in SALES_DETAIL_SHEETS:
+        if sheet in xls.sheet_names:
+            return pd.read_excel(sales_path, sheet_name=sheet)
+    raise ValueError(
+        f"销售源文件缺少明细 sheet，期望其一: {', '.join(SALES_DETAIL_SHEETS)}；实际: {xls.sheet_names}"
+    )
+
+
+def normalize_sales_export(df: pd.DataFrame) -> pd.DataFrame:
+    out = ensure_column(df, "年级", "阶段")
+    out = ensure_column(out, "老师姓名", "学习规划师姓名")
+    out = ensure_column(out, "销售邮箱", "学习规划师邮箱")
+    return out
+
+
+def normalize_wechat_export(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    if "年级" not in out.columns and "阶段" in out.columns:
+        out["年级"] = out["阶段"]
+    if "学部" not in out.columns and "学段" in out.columns:
+        xueduan_vals = set(out["学段"].dropna().astype(str).str.strip())
+        if xueduan_vals & SOURCE_LIKE_XUEDUAN:
+            out["学部"] = out["学段"]
+    out = ensure_column(out, "辅导老师", "学习规划师")
+    out = ensure_column(out, "辅导姓名", "学习规划师姓名", "学习规划师")
+    out = ensure_column(out, "辅导在线人数", "学习规划师在线人数")
+    out = ensure_column(out, "排班销售人数", "排班学习规划师人数")
+    return out
+
+
+def normalize_auth_export(df: pd.DataFrame, sys_source: str) -> pd.DataFrame:
+    out = ensure_column(df, "年级", "阶段")
+    if "学部" not in out.columns:
+        out["学部"] = out["学段"] if "学段" in out.columns else sys_source
+    out = ensure_column(out, "辅导老师邮箱", "学习规划师邮箱")
+    out = ensure_column(out, "辅导名字", "学习规划师名字", "学习规划师姓名")
+    out = ensure_column(out, "辅导邮箱", "学习规划师邮箱")
+    out = ensure_column(out, "老师姓名", "学习规划师姓名", "辅导名字", "学习规划师名字")
+    return out
+
+
 def filter_bundle_by_date(bundle: DataBundle, as_of: str) -> DataBundle:
     target = pd.to_datetime(as_of).normalize()
 
@@ -595,7 +653,7 @@ def load_and_prepare(
     wechat_path: Path,
     auth_aixue_path: Path,
 ) -> DataBundle:
-    sales = pd.read_excel(sales_path, sheet_name="销售风灵在线率明细数据")
+    sales = normalize_sales_export(read_sales_detail(sales_path))
     sales = remove_xinghuo_grade_rows(sales, "年级")
     sales = apply_team_grade_override(sales, "战队", "年级")
     sales = remove_xinghuo_team_rows(sales, "战队")
@@ -611,7 +669,7 @@ def load_and_prepare(
 
     x_wechat = pd.ExcelFile(wechat_path)
     if "风灵微信在线率汇总数据" in x_wechat.sheet_names:
-        wechat_sum = pd.read_excel(wechat_path, sheet_name="风灵微信在线率汇总数据")
+        wechat_sum = normalize_wechat_export(pd.read_excel(wechat_path, sheet_name="风灵微信在线率汇总数据"))
         wechat_sum = remove_xinghuo_grade_rows(wechat_sum, "年级")
         wechat_sum = apply_team_grade_override(wechat_sum, "战队", "年级")
         wechat_sum = remove_xinghuo_team_rows(wechat_sum, "战队")
@@ -628,7 +686,7 @@ def load_and_prepare(
             columns=["服务期", "日期", "分部", "学部", "年级", "运营中心", "战队", "辅导在线人数", "排班销售人数", "时段", "微信在线率", "sys_source", "分组"]
         )
 
-    wechat_detail = pd.read_excel(wechat_path, sheet_name="风灵个微在线率明细数据")
+    wechat_detail = normalize_wechat_export(pd.read_excel(wechat_path, sheet_name="风灵个微在线率明细数据"))
     wechat_detail = remove_xinghuo_grade_rows(wechat_detail, "年级")
     wechat_detail = apply_team_grade_override(wechat_detail, "战队", "年级")
     wechat_detail = remove_xinghuo_team_rows(wechat_detail, "战队")
@@ -641,7 +699,7 @@ def load_and_prepare(
     wechat_detail = wechat_detail[wechat_detail["分组"] != "其他"].copy()
 
     # 授权明细统一小时=23
-    auth_h = pd.read_excel(auth_high_path, sheet_name="个微授权明细数据")
+    auth_h = normalize_auth_export(pd.read_excel(auth_high_path, sheet_name="个微授权明细数据"), "高中")
     auth_h = remove_xinghuo_grade_rows(auth_h, "年级")
     auth_h = apply_team_grade_override(auth_h, "战队", "年级")
     auth_h = remove_xinghuo_team_rows(auth_h, "战队")
@@ -653,7 +711,7 @@ def load_and_prepare(
     auth_h["学部"] = [norm_school(g, "高中", x) for g, x in zip(auth_h["年级"], auth_h["学部"])]
     auth_h["分组"] = [assign_segment(o, "高中", g) for o, g in zip(auth_h["运营中心"], auth_h["年级"])]
 
-    auth_a = pd.read_excel(auth_aixue_path, sheet_name="个微授权明细数据")
+    auth_a = normalize_auth_export(pd.read_excel(auth_aixue_path, sheet_name="个微授权明细数据"), "爱学")
     auth_a = remove_xinghuo_grade_rows(auth_a, "年级")
     auth_a = apply_team_grade_override(auth_a, "战队", "年级")
     auth_a = remove_xinghuo_team_rows(auth_a, "战队")
