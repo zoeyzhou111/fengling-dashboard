@@ -65,12 +65,15 @@ def cap_auth_counts(df: pd.DataFrame, flow_col: str = "接流") -> pd.DataFrame:
 
 
 def dedupe_auth_detail(auth_detail: pd.DataFrame) -> pd.DataFrame:
-    """同一战队+老师邮箱只保留一条，避免重复明细行重复累计授权人数。"""
+    """同一业务日+战队+老师邮箱只保留一条，避免重复明细行重复累计授权人数。"""
     if auth_detail.empty:
         return auth_detail
     work = auth_detail.copy()
     work["老师邮箱"] = work["老师邮箱"].astype(str).str.strip().replace("nan", "")
-    keys = ["分组", "学部", "年级", "战队", "老师邮箱"]
+    if "日期" in work.columns:
+        work["日期"] = pd.to_datetime(work["日期"], errors="coerce").dt.strftime("%Y-%m-%d")
+    keys = ["日期", "分组", "学部", "年级", "战队", "老师邮箱"]
+    keys = [k for k in keys if k in work.columns]
     agg_map: Dict[str, str] = {}
     for col in work.columns:
         if col in keys:
