@@ -712,7 +712,8 @@ def load_and_prepare(
     auth_h["老师邮箱"] = auth_h["辅导老师邮箱"]
     auth_h["老师姓名"] = auth_h["辅导名字"]
     auth_h["学部"] = [norm_school(g, "高中", x) for g, x in zip(auth_h["年级"], auth_h["学部"])]
-    auth_h["分组"] = [assign_segment(o, "高中", g) for o, g in zip(auth_h["运营中心"], auth_h["年级"])]
+    # 高中授权导出里运营中心可能标成郑州一部，但口径仍按郑州高短划分
+    auth_h["分组"] = [assign_segment("郑州", "高中", g) for g in auth_h["年级"]]
 
     auth_a = normalize_auth_export(pd.read_excel(auth_aixue_path, sheet_name="个微授权明细数据"), "爱学")
     auth_a = remove_xinghuo_grade_rows(auth_a, "年级")
