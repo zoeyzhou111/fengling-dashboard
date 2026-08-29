@@ -9,7 +9,7 @@ from html import escape
 
 import pandas as pd
 
-from generate_daily_reports import expand_with_summary
+from generate_daily_reports import expand_with_summary, norm_school, normalize_sales_export, normalize_wechat_export
 
 
 ROOT = Path(__file__).resolve().parent
@@ -516,6 +516,50 @@ def fill_group_cols(df: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
         if col in fixed.columns:
             fixed[col] = fixed[col].replace("", pd.NA).ffill()
     return fixed
+
+
+def is_empty_export_sheet(df: pd.DataFrame) -> bool:
+    if df.empty:
+        return True
+    cols = [str(c) for c in df.columns]
+    return len(cols) == 1 and cols[0] == "无数据"
+
+
+def normalize_sales_origin_for_dashboard(df: pd.DataFrame) -> pd.DataFrame:
+    roster_cols = [
+        "学部",
+        "年级",
+        "战队",
+        "老师姓名",
+        "app在线率",
+        "app不在线时段list",
+        "pc在线率",
+        "pc不在线时段list",
+        "风灵在线率",
+    ]
+    if is_empty_export_sheet(df):
+        return pd.DataFrame(columns=roster_cols)
+    out = normalize_sales_export(df.copy())
+    if "sys_source" not in out.columns:
+        out["sys_source"] = out.get("系统来源", pd.Series("", index=out.index)).astype(str)
+    else:
+        out["sys_source"] = out["sys_source"].astype(str)
+    if "学部" not in out.columns:
+        out["学部"] = [norm_school(g, s, None) for g, s in zip(out["年级"], out["sys_source"])]
+    return out
+
+
+def normalize_wechat_origin_for_dashboard(df: pd.DataFrame) -> pd.DataFrame:
+    if is_empty_export_sheet(df):
+        return pd.DataFrame(columns=["学部", "年级", "战队", "辅导姓名", "风灵微信在线率"])
+    out = normalize_wechat_export(df.copy())
+    if "学部" not in out.columns:
+        src = out.get("sys_source", out.get("学段", pd.Series("爱学", index=out.index))).astype(str)
+        xuebu = out.get("学段", pd.Series("", index=out.index))
+        out["学部"] = [norm_school(g, s, x) for g, s, x in zip(out["年级"], src, xuebu)]
+    if "辅导姓名" not in out.columns:
+        out["辅导姓名"] = out.get("学习规划师姓名", out.get("辅导老师", ""))
+    return out
 
 
 def group_rowspans(df: pd.DataFrame, group_cols: List[str]) -> Dict[Tuple[int, str], int]:
@@ -1404,11 +1448,15 @@ def main() -> None:
         bad_file = seg_dir / f"郑州-{segment}-每日风灵不在线.xlsx"
 
         auth = load_auth_table(auth_file)
-        gwei_origin = pd.read_excel(auth_file, sheet_name="个微在线源数据")
+        gwei_origin = normalize_wechat_origin_for_dashboard(
+            pd.read_excel(auth_file, sheet_name="个微在线源数据")
+        )
         sales = pd.read_excel(sales_file, sheet_name="战队汇总透视")
-        sales_origin = pd.read_excel(sales_file, sheet_name="销售风灵在线率明细数据")
+        sales_origin = normalize_sales_origin_for_dashboard(
+            pd.read_excel(sales_file, sheet_name="销售风灵在线率明细数据")
+        )
         bad = pd.read_excel(bad_file, sheet_name="数据透视表", header=1)
-        bad_origin = pd.read_excel(bad_file, sheet_name="原表")
+        bad_origin = normalize_sales_origin_for_dashboard(pd.read_excel(bad_file, sheet_name="原表"))
 
         auth = auth.dropna(how="all")
         sales = sales.dropna(how="all")
