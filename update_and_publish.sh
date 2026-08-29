@@ -103,11 +103,34 @@ else
   cd "$ROOT_DIR"
   git add ".gitignore" ".nojekyll" ".github/workflows/deploy-pages.yml" "build_daily_web_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "config.env.example" "每日三表汇总看板.html" "周维度在线率看板.html" "访问统计看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
   if git diff --cached --quiet; then
-    echo "没有检测到需要提交的更新，跳过 commit/push。"
-    exit 0
+    echo "没有检测到需要提交的看板更新，跳过 commit。"
+  else
+    git commit -m "update daily dashboard $(date +%F)"
   fi
-  git commit -m "update daily dashboard $(date +%F)"
-  git -c http.version=HTTP/1.1 push
+
+  ahead_count="$(git rev-list --count @{u}..HEAD 2>/dev/null || echo 0)"
+  if [[ "$ahead_count" -gt 0 ]]; then
+    echo "检测到本地有 ${ahead_count} 个未推送提交，开始 push..."
+    push_ok=0
+    for attempt in 1 2 3; do
+      echo "git push 尝试 ${attempt}/3 ..."
+      if git -c http.version=HTTP/1.1 push; then
+        push_ok=1
+        break
+      fi
+      if [[ "$attempt" -lt 3 ]]; then
+        echo "push 失败，5 秒后重试..."
+        sleep 5
+      fi
+    done
+    if [[ "$push_ok" -ne 1 ]]; then
+      echo "ERROR: git push 连续 3 次失败。数据已在本地生成，可稍后手动执行："
+      echo "  cd \"$ROOT_DIR\" && git -c http.version=HTTP/1.1 push"
+      exit 1
+    fi
+  else
+    echo "本地与远程已同步，无需 push。"
+  fi
 fi
 
 echo "== Done =="
