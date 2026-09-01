@@ -165,7 +165,11 @@ def norm_school(grade, src=None, xuebu=None):
 
 def assign_segment(oc, src, grade=None):
     oc = "" if pd.isna(oc) else str(oc)
+    src = "" if pd.isna(src) else str(src)
     g = "" if pd.isna(grade) else str(grade)
+    # 高中源数据即使运营中心标成郑州一部，仍归高短（与授权口径一致）
+    if src == "高中":
+        return "高短"
     if oc == "郑州一部":
         return "初短一部"
     if oc == "郑州二部":
