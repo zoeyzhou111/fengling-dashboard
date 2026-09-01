@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from datetime import date, datetime, timedelta
@@ -1435,7 +1436,7 @@ def build_index_page(summary_rows: List[dict], date_text: str) -> str:
 """
 
 
-def main() -> None:
+def main(as_of_date: str = "") -> None:
     DETAIL_DIR.mkdir(parents=True, exist_ok=True)
     TEAM_DETAIL_DIR.mkdir(parents=True, exist_ok=True)
     all_dates = []
@@ -1593,6 +1594,14 @@ def main() -> None:
             valid_date = bad_origin["日期"].dropna()
             if not valid_date.empty:
                 all_dates.append(str(valid_date.max()))
+        elif "日期" in gwei_origin.columns:
+            valid_date = gwei_origin["日期"].dropna()
+            if not valid_date.empty:
+                all_dates.append(str(valid_date.max()))
+        elif "日期" in sales_origin.columns:
+            valid_date = sales_origin["日期"].dropna()
+            if not valid_date.empty:
+                all_dates.append(str(valid_date.max()))
 
         auth_sum = pick_overall_summary_row(auth, "接流")
         sales_sum = pick_overall_summary_row(sales, "接流人数")
@@ -1696,6 +1705,8 @@ def main() -> None:
             )
 
     date_text = max(all_dates) if all_dates else ""
+    if as_of_date:
+        date_text = as_of_date
     INDEX_HTML.write_text(build_index_page(summary_rows, date_text), encoding="utf-8")
     VISIT_STATS_HTML.write_text(build_visit_stats_page(), encoding="utf-8")
     history_df = update_history(parse_date_text(date_text) if date_text else date.today(), summary_rows)
@@ -1709,4 +1720,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="生成每日三表汇总看板与周维度历史")
+    parser.add_argument("--as-of-date", default="", help="指定业务日期（YYYY-MM-DD），用于周维度历史回填")
+    args = parser.parse_args()
+    main(as_of_date=args.as_of_date)

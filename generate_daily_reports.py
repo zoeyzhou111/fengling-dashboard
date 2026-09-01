@@ -1082,8 +1082,10 @@ def main():
     )
     if args.as_of_date:
         bundle = filter_bundle_by_date(bundle, args.as_of_date)
+        if bundle.sales.empty and bundle.auth_detail.empty and bundle.wechat_detail.empty:
+            raise SystemExit(f"指定日期无任何数据: {args.as_of_date}")
         if bundle.sales.empty:
-            raise SystemExit(f"指定日期无销售数据: {args.as_of_date}")
+            print(f"警告：{args.as_of_date} 无销售数据，将仅基于授权/个微数据生成。")
 
     dt = pd.to_datetime(bundle.sales.get("日期"), errors="coerce").max()
     date_text = f"{dt.month}月{dt.day}日" if pd.notna(dt) else ""
