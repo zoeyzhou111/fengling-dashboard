@@ -12,3 +12,4 @@ config.env
 # Local output artifacts (keep local, don't publish to git)
 每日输出/**/*.xlsx
 每日三表汇总看板.xlsx
+last_run.log
