@@ -403,6 +403,51 @@ def parse_date_text(date_text: str) -> date:
         return date.today()
 
 
+def prefer_metric(new_val, old_val, *, is_count: bool = False) -> float:
+  """回填时保留已有有效数据，避免被不完整日运行覆盖为 0。"""
+  if pd.isna(new_val):
+    return old_val
+  if pd.isna(old_val):
+    return new_val
+  if is_count:
+    if new_val == 0 and old_val > 0:
+      return old_val
+    return new_val
+  if new_val == 0 and old_val != 0:
+    return old_val
+  return new_val
+
+
+def merge_history_rows(old_row: pd.Series, new_row: pd.Series) -> pd.Series:
+  merged = new_row.copy()
+  rate_cols = [
+    "auth_rate",
+    "online_rate",
+    "gwei_rate",
+    "mobile_rate",
+    "pc_rate",
+  ]
+  num_cols = [
+    "gwei_num",
+    "gwei_den",
+    "mobile_num",
+    "mobile_den",
+    "pc_num",
+    "pc_den",
+    "auth_num",
+    "auth_den",
+  ]
+  for col in rate_cols:
+    if col in old_row.index and col in merged.index:
+      merged[col] = prefer_metric(merged[col], old_row[col])
+  for col in num_cols:
+    if col in old_row.index and col in merged.index:
+      merged[col] = prefer_metric(merged[col], old_row[col])
+  if "bad_count" in old_row.index and "bad_count" in merged.index:
+    merged["bad_count"] = prefer_metric(merged["bad_count"], old_row["bad_count"], is_count=True)
+  return merged
+
+
 def update_history(history_date: date, summary_rows: List[dict]) -> pd.DataFrame:
     rows = []
     for row in summary_rows:
@@ -450,8 +495,19 @@ def update_history(history_date: date, summary_rows: List[dict]) -> pd.DataFrame
                 "bad_count",
             ]
         )
-    combined = new_df.copy() if old_df.empty else pd.concat([old_df, new_df], ignore_index=True)
-    combined = combined.drop_duplicates(subset=["date", "segment"], keep="last")
+    if old_df.empty:
+        combined = new_df.copy()
+    else:
+        combined = old_df.copy()
+        for _, new_row in new_df.iterrows():
+            mask = (combined["date"].astype(str) == str(new_row["date"])) & (
+                combined["segment"].astype(str) == str(new_row["segment"])
+            )
+            if mask.any():
+                idx = combined[mask].index[0]
+                combined.loc[idx] = merge_history_rows(combined.loc[idx], new_row)
+            else:
+                combined = pd.concat([combined, pd.DataFrame([new_row])], ignore_index=True)
     combined["date"] = combined["date"].astype(str)
     combined["segment"] = combined["segment"].astype(str)
     combined["auth_rate"] = pd.to_numeric(combined["auth_rate"], errors="coerce")
