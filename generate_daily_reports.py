@@ -20,6 +20,15 @@ SEGMENT_GROUPS = {
     "高中": ["小短", "高短"],
 }
 SEGMENTS = [seg for group in SEGMENT_GROUPS.values() for seg in group]
+CHUDUAN_SEGMENTS = set(SEGMENT_GROUPS["初中"])
+GRADE_LABEL_MAP = {
+    "初阶一": "初一",
+    "初阶二": "初二",
+    "初阶三": "初三",
+    "高阶一": "高一",
+    "高阶二": "高二",
+    "高阶三": "高三",
+}
 SEGMENT_KEYS = {
     "初短一部": "chuduan1",
     "初短二部": "chuduan2",
@@ -147,18 +156,89 @@ def drop_wrong_grade_team_rows(df: pd.DataFrame, team_col: str = "战队", grade
     return data[keep].copy()
 
 
+def apply_grade_labels(df: pd.DataFrame, grade_col: str = "年级") -> pd.DataFrame:
+    if df.empty or grade_col not in df.columns:
+        return df
+    out = df.copy()
+    out[grade_col] = out[grade_col].map(normalize_grade_label)
+    return out
+
+
+def drop_zero_online_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """剔除企微电脑端、手机端在线率均为 0 的战队明细行（保留汇总行）。"""
+    if df.empty:
+        return df
+    data = df.copy()
+    grade_col = data["年级"].astype(str)
+    summary_mask = grade_col.str.contains("汇总", na=False) | data["战队"].astype(str).str.strip().eq("")
+    detail = data[~summary_mask].copy()
+    summary = data[summary_mask].copy()
+    if detail.empty:
+        return data
+    pc = pd.to_numeric(detail.get("电脑端全天在线率"), errors="coerce").fillna(0)
+    mb = pd.to_numeric(detail.get("手机端全天在线率"), errors="coerce").fillna(0)
+    detail = detail[(pc > 0) | (mb > 0)].copy()
+    return pd.concat([detail, summary], ignore_index=True)
+
+
+def drop_zero_gwei_rows(df: pd.DataFrame) -> pd.DataFrame:
+    """剔除个微全天在线率为 0 的战队明细行（保留汇总行）。"""
+    if df.empty or "个微全天在线率" not in df.columns:
+        return df
+    data = df.copy()
+    grade_col = data["年级"].astype(str)
+    summary_mask = grade_col.str.contains("汇总", na=False) | data["战队"].astype(str).str.strip().eq("")
+    detail = data[~summary_mask].copy()
+    summary = data[summary_mask].copy()
+    if detail.empty:
+        return data
+    rate = pd.to_numeric(detail["个微全天在线率"], errors="coerce").fillna(0)
+    flow = pd.to_numeric(detail.get("低价课带班"), errors="coerce").fillna(0)
+    detail = detail[(rate > 0) | (flow <= 0)].copy()
+    return pd.concat([detail, summary], ignore_index=True)
+
+
+def filter_chuduan_school(df: pd.DataFrame, segment: str) -> pd.DataFrame:
+    if segment not in CHUDUAN_SEGMENTS or df.empty or "学部" not in df.columns:
+        return df
+    return df[df["学部"].astype(str) != "高中"].copy()
+
+
+def normalize_grade_label(grade) -> str:
+    g = str(grade or "").strip()
+    return GRADE_LABEL_MAP.get(g, g)
+
+
+def normalize_wechat_source(src) -> str:
+    s = str(src or "").strip()
+    if s in ("高中", "高阶"):
+        return "高中"
+    if s in ("爱学", "初中"):
+        return "爱学"
+    return s
+
+
+def is_high_school_context(src, grade=None) -> bool:
+    s = normalize_wechat_source(src)
+    g = normalize_grade_label(grade)
+    if s == "高中":
+        return True
+    return g.startswith("高阶") or (g.startswith("高") and g not in {"高价课"})
+
+
 def norm_school(grade, src=None, xuebu=None):
-    g = str(grade) if pd.notna(grade) else ""
+    g = normalize_grade_label(grade)
+    src_norm = normalize_wechat_source(src) if isinstance(src, str) else src
+    xuebu_norm = normalize_wechat_source(xuebu) if isinstance(xuebu, str) else xuebu
     if g == "新兵营":
-        if isinstance(src, str):
-            if src == "高中":
+        if src_norm == "高中":
+            return "高中"
+        if src_norm == "爱学":
+            return "初中"
+        if isinstance(xuebu_norm, str):
+            if xuebu_norm == "高中":
                 return "高中"
-            if src == "爱学":
-                return "初中"
-        if isinstance(xuebu, str):
-            if xuebu in ["高中", "初中"]:
-                return xuebu
-            if xuebu == "爱学":
+            if xuebu_norm in ("爱学", "初中"):
                 return "初中"
         return "初中"
     if g.startswith("小") or g == "全年级":
@@ -167,20 +247,20 @@ def norm_school(grade, src=None, xuebu=None):
         return "高中"
     if g.startswith("初"):
         return "初中"
-    if isinstance(xuebu, str):
-        if xuebu in ["高中", "初中"]:
-            return xuebu
-        if xuebu == "爱学":
+    if isinstance(xuebu_norm, str):
+        if xuebu_norm == "高中":
+            return "高中"
+        if xuebu_norm in ("爱学", "初中"):
             return "初中"
     return "其他"
 
 
 def assign_segment(oc, src, grade=None):
     oc = "" if pd.isna(oc) else str(oc)
-    src = "" if pd.isna(src) else str(src)
-    g = "" if pd.isna(grade) else str(grade)
-    # 高中源数据即使运营中心标成郑州一部，仍归高短（与授权口径一致）
-    if src == "高中":
+    src = normalize_wechat_source(src)
+    g = normalize_grade_label(grade)
+    # 高中/高阶：即使运营中心挂在郑州一部/二部，也归高短
+    if is_high_school_context(src, g):
         return "高短"
     if oc in ("郑州三部", "郑州初短三部"):
         return "初短三部"
@@ -677,6 +757,7 @@ def load_and_prepare(
     auth_aixue_path: Path,
 ) -> DataBundle:
     sales = normalize_sales_export(read_sales_detail(sales_path))
+    sales = apply_grade_labels(sales)
     sales = remove_xinghuo_grade_rows(sales, "年级")
     sales = apply_team_grade_override(sales, "战队", "年级")
     sales = remove_xinghuo_team_rows(sales, "战队")
@@ -685,7 +766,7 @@ def load_and_prepare(
         sales["sys_source"] = sales["系统来源"]
     if "sys_source" not in sales.columns:
         sales["sys_source"] = sales.get("学部", "").astype(str)
-    sales["sys_source"] = sales["sys_source"].astype(str)
+    sales["sys_source"] = sales["sys_source"].map(normalize_wechat_source)
     sales["学部"] = [norm_school(g, s, None) for g, s in zip(sales["年级"], sales["sys_source"])]
     sales["分组"] = [assign_segment(o, s, g) for o, s, g in zip(sales["运营中心"], sales["sys_source"], sales["年级"])]
     sales = sales[sales["分组"] != "其他"].copy()
@@ -693,11 +774,12 @@ def load_and_prepare(
     x_wechat = pd.ExcelFile(wechat_path)
     if "风灵微信在线率汇总数据" in x_wechat.sheet_names:
         wechat_sum = normalize_wechat_export(pd.read_excel(wechat_path, sheet_name="风灵微信在线率汇总数据"))
+        wechat_sum = apply_grade_labels(wechat_sum)
         wechat_sum = remove_xinghuo_grade_rows(wechat_sum, "年级")
         wechat_sum = apply_team_grade_override(wechat_sum, "战队", "年级")
         wechat_sum = remove_xinghuo_team_rows(wechat_sum, "战队")
         wechat_sum["战队"] = wechat_sum["战队"].map(normalize_team_name)
-        wechat_sum["sys_source"] = wechat_sum["学部"].replace({"爱学": "爱学", "高中": "高中"})
+        wechat_sum["sys_source"] = wechat_sum["学部"].map(normalize_wechat_source)
         wechat_sum["学部"] = [
             norm_school(g, s, x) for g, s, x in zip(wechat_sum["年级"], wechat_sum["sys_source"], wechat_sum["学部"])
         ]
@@ -710,11 +792,12 @@ def load_and_prepare(
         )
 
     wechat_detail = normalize_wechat_export(pd.read_excel(wechat_path, sheet_name="风灵个微在线率明细数据"))
+    wechat_detail = apply_grade_labels(wechat_detail)
     wechat_detail = remove_xinghuo_grade_rows(wechat_detail, "年级")
     wechat_detail = apply_team_grade_override(wechat_detail, "战队", "年级")
     wechat_detail = remove_xinghuo_team_rows(wechat_detail, "战队")
     wechat_detail["战队"] = wechat_detail["战队"].map(normalize_team_name)
-    wechat_detail["sys_source"] = wechat_detail["学部"].replace({"爱学": "爱学", "高中": "高中"})
+    wechat_detail["sys_source"] = wechat_detail["学部"].map(normalize_wechat_source)
     wechat_detail["学部"] = [
         norm_school(g, s, x) for g, s, x in zip(wechat_detail["年级"], wechat_detail["sys_source"], wechat_detail["学部"])
     ]
@@ -723,6 +806,7 @@ def load_and_prepare(
 
     # 授权明细统一小时=23
     auth_h = normalize_auth_export(pd.read_excel(auth_high_path, sheet_name="个微授权明细数据"), "高中")
+    auth_h = apply_grade_labels(auth_h)
     auth_h = remove_xinghuo_grade_rows(auth_h, "年级")
     auth_h = apply_team_grade_override(auth_h, "战队", "年级")
     auth_h = remove_xinghuo_team_rows(auth_h, "战队")
@@ -736,6 +820,7 @@ def load_and_prepare(
     auth_h["分组"] = [assign_segment("郑州", "高中", g) for g in auth_h["年级"]]
 
     auth_a = normalize_auth_export(pd.read_excel(auth_aixue_path, sheet_name="个微授权明细数据"), "爱学")
+    auth_a = apply_grade_labels(auth_a)
     auth_a = remove_xinghuo_grade_rows(auth_a, "年级")
     auth_a = apply_team_grade_override(auth_a, "战队", "年级")
     auth_a = remove_xinghuo_team_rows(auth_a, "战队")
@@ -854,6 +939,12 @@ def build_metrics(bundle: DataBundle, segment: str):
 
     auth_export = pd.merge(base, auth_metric, on=keys, how="left")
     auth_export = cap_auth_counts(auth_export, flow_col="接流")
+
+    func = filter_chuduan_school(func, segment)
+    online = filter_chuduan_school(online, segment)
+    wx_pvt = filter_chuduan_school(wx_pvt, segment)
+    online = drop_zero_online_rows(online)
+
     return sales, wechat_sum, wechat_detail, auth, func, online, bad, wx_pvt, auth_export
 
 

@@ -1917,6 +1917,18 @@ def main(as_of_date: str = "") -> None:
 
         auth_detail = auth_detail[~auth_detail.apply(is_summary_row, axis=1)]
         sales_detail = sales_detail[~sales_detail.apply(is_summary_row, axis=1)]
+        sales_cols = [
+            "学部",
+            "年级",
+            "战队",
+            "接流人数",
+            "电脑端全天在线人数",
+            "电脑端全天在线率",
+            "手机端全天在线人数",
+            "手机端全天在线率",
+        ]
+        if sales_detail.empty:
+            sales_detail = pd.DataFrame(columns=sales_cols)
 
         team_set = set()
         for frame in (auth_detail, sales_detail, bad, roster):
