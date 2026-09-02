@@ -15,7 +15,15 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter, range_boundaries
 
 
-SEGMENTS = ["初短一部", "初短二部", "小短", "高短"]
+SEGMENTS = ["初短一部", "初短二部", "初短三部", "郑州特战队", "小短", "高短"]
+SEGMENT_KEYS = {
+    "初短一部": "chuduan1",
+    "初短二部": "chuduan2",
+    "初短三部": "chuduan3",
+    "郑州特战队": "tezhan",
+    "小短": "xiaoduan",
+    "高短": "gaoduan",
+}
 XINGHUO_TEAM_ALLOWLIST = {"星火先锋-秦智豪"}
 TEAM_GRADE_OVERRIDE = {
     "溯川向上-刘炎鹤": "高二",
@@ -170,6 +178,10 @@ def assign_segment(oc, src, grade=None):
     # 高中源数据即使运营中心标成郑州一部，仍归高短（与授权口径一致）
     if src == "高中":
         return "高短"
+    if oc in ("郑州三部", "郑州初短三部"):
+        return "初短三部"
+    if oc == "郑州特战队":
+        return "郑州特战队"
     if oc == "郑州一部":
         return "初短一部"
     if oc == "郑州二部":

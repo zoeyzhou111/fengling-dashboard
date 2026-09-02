@@ -40,7 +40,9 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
 .segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
 .segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
-.segment-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #06b6d4; }
+.segment-chuduan3 { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #0891b2; }
+.segment-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 8px solid #e11d48; }
+.segment-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 8px solid #22c55e; }
 .segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -57,11 +59,13 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
 .mini-table th, .mini-table td { font-size: 28px; }
 .nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
-.weekly-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.weekly-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
 .weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
 .weekly-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6; }
 .weekly-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 6px solid #8b5cf6; }
-.weekly-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #06b6d4; }
+.weekly-chuduan3 { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #0891b2; }
+.weekly-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 6px solid #e11d48; }
+.weekly-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 6px solid #22c55e; }
 .weekly-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f97316; }
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
@@ -137,6 +141,48 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
     <a class="card-link card-bad" href="每日三表汇总看板_详情/chuduan2_bad.html">
       <div class="card-label">每日不在线汇总人数</div>
       <div class="card-value">108</div>
+      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
+    </a>
+  </div>
+</section>
+
+<section class="segment-block segment-chuduan3">
+  <h2 class="segment-name">初短三部</h2>
+  <div class="cards">
+    <a class="card-link card-auth" href="每日三表汇总看板_详情/chuduan3_auth.html">
+      <div class="card-label">个微授权汇总率</div>
+      <div class="card-value">#N/A</div>
+      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
+    </a>
+    <a class="card-link card-online" href="每日三表汇总看板_详情/chuduan3_sales.html">
+      <div class="card-label">企微在线汇总率</div>
+      <div class="card-value">#N/A</div>
+      <div class="card-sub">电脑端：#N/A｜手机端：#N/A</div>
+    </a>
+    <a class="card-link card-bad" href="每日三表汇总看板_详情/chuduan3_bad.html">
+      <div class="card-label">每日不在线汇总人数</div>
+      <div class="card-value">0</div>
+      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
+    </a>
+  </div>
+</section>
+
+<section class="segment-block segment-tezhan">
+  <h2 class="segment-name">郑州特战队</h2>
+  <div class="cards">
+    <a class="card-link card-auth" href="每日三表汇总看板_详情/tezhan_auth.html">
+      <div class="card-label">个微授权汇总率</div>
+      <div class="card-value">#N/A</div>
+      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
+    </a>
+    <a class="card-link card-online" href="每日三表汇总看板_详情/tezhan_sales.html">
+      <div class="card-label">企微在线汇总率</div>
+      <div class="card-value">#N/A</div>
+      <div class="card-sub">电脑端：#N/A｜手机端：#N/A</div>
+    </a>
+    <a class="card-link card-bad" href="每日三表汇总看板_详情/tezhan_bad.html">
+      <div class="card-label">每日不在线汇总人数</div>
+      <div class="card-value">0</div>
       <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
     </a>
   </div>

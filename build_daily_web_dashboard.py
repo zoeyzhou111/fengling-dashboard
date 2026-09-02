@@ -10,7 +10,14 @@ from html import escape
 
 import pandas as pd
 
-from generate_daily_reports import expand_with_summary, norm_school, normalize_sales_export, normalize_wechat_export
+from generate_daily_reports import (
+    SEGMENTS,
+    SEGMENT_KEYS,
+    expand_with_summary,
+    norm_school,
+    normalize_sales_export,
+    normalize_wechat_export,
+)
 
 
 ROOT = Path(__file__).resolve().parent
@@ -23,13 +30,8 @@ VISIT_STATS_HTML = ROOT / "访问统计看板.html"
 HISTORY_CSV = ROOT / "dashboard_history.csv"
 CONFIG_ENV = ROOT / "config.env"
 
-SEGMENTS = ["初短一部", "初短二部", "小短", "高短"]
-SEGMENT_KEYS = {
-    "初短一部": "chuduan1",
-    "初短二部": "chuduan2",
-    "小短": "xiaoduan",
-    "高短": "gaoduan",
-}
+SEGMENTS = SEGMENTS
+SEGMENT_KEYS = SEGMENT_KEYS
 GAODUAN_TEAM_GRADE_FIX = {
     "溯川向上-刘炎鹤": "高二",
     "薪耀巅峰-李新": "高二",
@@ -648,38 +650,41 @@ def auth_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: s
         "爱芯个微授权率",
         "个微功能正常率",
     ]
-    data = df[cols].copy()
-    data = fill_group_cols(data, ["学部", "年级"])
-    spans = group_rowspans(data, ["学部", "年级"])
-    rows = []
-    for i in range(len(data)):
-        row = data.iloc[i]
-        summary = is_summary_row(row)
-        cls = "summary-row" if summary else ""
-        tds = []
-        for c in cols:
-            if c in {"学部", "年级"}:
-                start = (i, c) in spans
-                if start:
-                    rs = spans[(i, c)]
-                    tds.append(f'<td rowspan="{rs}" class="left-group {cls}">{safe_text(row[c])}</td>')
-                else:
-                    continue
-            else:
-                val = row[c]
-                if "率" in c:
-                    txt = safe_pct(val)
-                    rate_cls = "rate-blue" if c == "个微全天在线率" else ("rate-green" if c == "爱芯个微授权率" else "rate-mint")
-                    band_cls = rate_level_class(val)
-                    tds.append(f'<td class="{rate_cls}{band_cls} {cls}">{txt}</td>')
-                elif c == "战队":
-                    if summary:
-                        tds.append(f'<td class="{cls}">{safe_text(val)}</td>')
+    if df.empty:
+        rows = [f'<tr><td colspan="{len(cols)}">无数据</td></tr>']
+    else:
+        data = df[cols].copy()
+        data = fill_group_cols(data, ["学部", "年级"])
+        spans = group_rowspans(data, ["学部", "年级"])
+        rows = []
+        for i in range(len(data)):
+            row = data.iloc[i]
+            summary = is_summary_row(row)
+            cls = "summary-row" if summary else ""
+            tds = []
+            for c in cols:
+                if c in {"学部", "年级"}:
+                    start = (i, c) in spans
+                    if start:
+                        rs = spans[(i, c)]
+                        tds.append(f'<td rowspan="{rs}" class="left-group {cls}">{safe_text(row[c])}</td>')
                     else:
-                        tds.append(f'<td class="{cls}">{link_team(segment_key, val, from_page="auth")}</td>')
+                        continue
                 else:
-                    tds.append(f'<td class="{cls}">{safe_int(val)}</td>')
-        rows.append(f"<tr>{''.join(tds)}</tr>")
+                    val = row[c]
+                    if "率" in c:
+                        txt = safe_pct(val)
+                        rate_cls = "rate-blue" if c == "个微全天在线率" else ("rate-green" if c == "爱芯个微授权率" else "rate-mint")
+                        band_cls = rate_level_class(val)
+                        tds.append(f'<td class="{rate_cls}{band_cls} {cls}">{txt}</td>')
+                    elif c == "战队":
+                        if summary:
+                            tds.append(f'<td class="{cls}">{safe_text(val)}</td>')
+                        else:
+                            tds.append(f'<td class="{cls}">{link_team(segment_key, val, from_page="auth")}</td>')
+                    else:
+                        tds.append(f'<td class="{cls}">{safe_int(val)}</td>')
+            rows.append(f"<tr>{''.join(tds)}</tr>")
 
     return f"""
 <!doctype html>
@@ -717,34 +722,37 @@ def auth_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: s
 
 def sales_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: str) -> str:
     cols = ["学部", "年级", "战队", "接流人数", "电脑端全天在线人数", "电脑端全天在线率", "手机端全天在线人数", "手机端全天在线率"]
-    data = df[cols].copy()
-    data = fill_group_cols(data, ["学部", "年级"])
-    spans = group_rowspans(data, ["学部", "年级"])
-    rows = []
-    for i in range(len(data)):
-        row = data.iloc[i]
-        summary = is_summary_row(row)
-        cls = "summary-row" if summary else ""
-        tds = []
-        for c in cols:
-            if c in {"学部", "年级"}:
-                if (i, c) in spans:
-                    tds.append(f'<td rowspan="{spans[(i, c)]}" class="left-group {cls}">{safe_text(row[c])}</td>')
+    if df.empty:
+        rows = [f'<tr><td colspan="{len(cols)}">无数据</td></tr>']
+    else:
+        data = df[cols].copy()
+        data = fill_group_cols(data, ["学部", "年级"])
+        spans = group_rowspans(data, ["学部", "年级"])
+        rows = []
+        for i in range(len(data)):
+            row = data.iloc[i]
+            summary = is_summary_row(row)
+            cls = "summary-row" if summary else ""
+            tds = []
+            for c in cols:
+                if c in {"学部", "年级"}:
+                    if (i, c) in spans:
+                        tds.append(f'<td rowspan="{spans[(i, c)]}" class="left-group {cls}">{safe_text(row[c])}</td>')
+                    else:
+                        continue
+                elif "率" in c:
+                    txt = safe_pct(row[c])
+                    band_cls = rate_level_class(row[c])
+                    rate_cls = "rate-blue" if "电脑" in c else "rate-yellow"
+                    tds.append(f'<td class="{rate_cls}{band_cls} {cls}">{txt}</td>')
+                elif c == "战队":
+                    if summary:
+                        tds.append(f'<td class="{cls}">{safe_text(row[c])}</td>')
+                    else:
+                        tds.append(f'<td class="{cls}">{link_team(segment_key, row[c], from_page="sales")}</td>')
                 else:
-                    continue
-            elif "率" in c:
-                txt = safe_pct(row[c])
-                band_cls = rate_level_class(row[c])
-                rate_cls = "rate-blue" if "电脑" in c else "rate-yellow"
-                tds.append(f'<td class="{rate_cls}{band_cls} {cls}">{txt}</td>')
-            elif c == "战队":
-                if summary:
-                    tds.append(f'<td class="{cls}">{safe_text(row[c])}</td>')
-                else:
-                    tds.append(f'<td class="{cls}">{link_team(segment_key, row[c], from_page="sales")}</td>')
-            else:
-                tds.append(f'<td class="{cls}">{safe_int(row[c])}</td>')
-        rows.append(f"<tr>{''.join(tds)}</tr>")
+                    tds.append(f'<td class="{cls}">{safe_int(row[c])}</td>')
+            rows.append(f"<tr>{''.join(tds)}</tr>")
 
     return f"""
 <!doctype html>
@@ -792,33 +800,36 @@ def sales_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: 
 
 def bad_table_html(df: pd.DataFrame, title: str, date_text: str, segment_key: str) -> str:
     cols = ["学部", "年级", "战队", "辅导姓名", "企微-手机在线率", "企微-电脑在线率", "个微在线率"]
-    data = df[cols].copy()
-    data = fill_group_cols(data, ["学部", "年级", "战队"])
-    spans = group_rowspans(data, ["学部", "年级", "战队"])
-    rows = []
-    for i in range(len(data)):
-        row = data.iloc[i]
-        tds = []
-        for c in cols:
-            if c in {"学部", "年级", "战队"}:
-                if (i, c) in spans:
-                    if c == "战队":
-                        team_html = link_team(segment_key, row[c], from_page="bad")
-                        tds.append(f'<td rowspan="{spans[(i, c)]}" class="left-group">{team_html}</td>')
+    if df.empty:
+        rows = [f'<tr><td colspan="{len(cols)}">无数据</td></tr>']
+    else:
+        data = df[cols].copy()
+        data = fill_group_cols(data, ["学部", "年级", "战队"])
+        spans = group_rowspans(data, ["学部", "年级", "战队"])
+        rows = []
+        for i in range(len(data)):
+            row = data.iloc[i]
+            tds = []
+            for c in cols:
+                if c in {"学部", "年级", "战队"}:
+                    if (i, c) in spans:
+                        if c == "战队":
+                            team_html = link_team(segment_key, row[c], from_page="bad")
+                            tds.append(f'<td rowspan="{spans[(i, c)]}" class="left-group">{team_html}</td>')
+                        else:
+                            tds.append(f'<td rowspan="{spans[(i, c)]}" class="left-group">{safe_text(row[c])}</td>')
                     else:
-                        tds.append(f'<td rowspan="{spans[(i, c)]}" class="left-group">{safe_text(row[c])}</td>')
+                        continue
+                elif "率" in c:
+                    val = row[c]
+                    if pd.isna(val) or val == "":
+                        val = 0
+                    txt = safe_pct(val)
+                    band_cls = rate_level_class(val)
+                    tds.append(f'<td class="rate-yellow{band_cls}">{txt}</td>')
                 else:
-                    continue
-            elif "率" in c:
-                val = row[c]
-                if pd.isna(val) or val == "":
-                    val = 0
-                txt = safe_pct(val)
-                band_cls = rate_level_class(val)
-                tds.append(f'<td class="rate-yellow{band_cls}">{txt}</td>')
-            else:
-                tds.append(f"<td>{row[c]}</td>")
-        rows.append(f"<tr>{''.join(tds)}</tr>")
+                    tds.append(f"<td>{row[c]}</td>")
+            rows.append(f"<tr>{''.join(tds)}</tr>")
 
     return f"""
 <!doctype html>
@@ -889,7 +900,9 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
 .segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
 .segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
-.segment-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #06b6d4; }
+.segment-chuduan3 { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #0891b2; }
+.segment-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 8px solid #e11d48; }
+.segment-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 8px solid #22c55e; }
 .segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -906,11 +919,13 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
 .mini-table th, .mini-table td { font-size: 28px; }
 .nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
-.weekly-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.weekly-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
 .weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
 .weekly-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6; }
 .weekly-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 6px solid #8b5cf6; }
-.weekly-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #06b6d4; }
+.weekly-chuduan3 { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #0891b2; }
+.weekly-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 6px solid #e11d48; }
+.weekly-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 6px solid #22c55e; }
 .weekly-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f97316; }
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
@@ -1211,7 +1226,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     const DEFAULT_WEEK = {json.dumps(default_week, ensure_ascii=False)};
     const SEGMENTS = {json.dumps(SEGMENTS, ensure_ascii=False)};
     const SEGMENT_KEYS = {json.dumps(SEGMENT_KEYS, ensure_ascii=False)};
-    const SEG_COLORS = {json.dumps({"初短一部": "#ef4444", "初短二部": "#8b5cf6", "小短": "#22c55e", "高短": "#f59e0b"}, ensure_ascii=False)};
+    const SEG_COLORS = {json.dumps({"初短一部": "#ef4444", "初短二部": "#8b5cf6", "初短三部": "#0891b2", "郑州特战队": "#e11d48", "小短": "#22c55e", "高短": "#f59e0b"}, ensure_ascii=False)};
     const TODAY_WEEK = {json.dumps(default_week, ensure_ascii=False)};
 
     const charts = {{}};
@@ -1435,6 +1450,8 @@ def build_index_page(summary_rows: List[dict], date_text: str) -> str:
     class_map = {
         "初短一部": "segment-chuduan1",
         "初短二部": "segment-chuduan2",
+        "初短三部": "segment-chuduan3",
+        "郑州特战队": "segment-tezhan",
         "小短": "segment-xiaoduan",
         "高短": "segment-gaoduan",
     }
@@ -1512,110 +1529,152 @@ def main(as_of_date: str = "") -> None:
         sales_origin = normalize_sales_origin_for_dashboard(
             pd.read_excel(sales_file, sheet_name="销售风灵在线率明细数据")
         )
-        bad = pd.read_excel(bad_file, sheet_name="数据透视表", header=1)
-        bad_origin = normalize_sales_origin_for_dashboard(pd.read_excel(bad_file, sheet_name="原表"))
 
-        auth = auth.dropna(how="all")
-        sales = sales.dropna(how="all")
-        bad = bad.dropna(how="all")
-
-        if segment == "高短":
-            sales = remove_wrong_grade_duplicates(sales, GAODUAN_TEAM_GRADE_FIX)
-
-        bad = bad[
-            [
-                "学部",
-                "年级",
-                "战队",
-                "辅导姓名",
-                "企微-手机在线率",
-                "企微-电脑在线率",
-                "个微在线率",
-            ]
-        ].copy()
-        bad = bad[bad["辅导姓名"].astype(str).str.strip().ne("")]
-        bad = fill_group_cols(bad, ["学部", "年级", "战队"])
-        bad["战队"] = bad["战队"].astype(str).str.strip()
-        bad = bad[bad["战队"].ne("") & bad["战队"].str.lower().ne("nan")].copy()
-        pc_offline_map = build_pc_offline_period_map(bad_origin)
-        mobile_offline_map = build_mobile_offline_period_map(bad_origin)
-        if not pc_offline_map.empty:
-            bad = bad.merge(
-                pc_offline_map,
-                on=["学部", "年级", "战队", "辅导姓名"],
-                how="left",
+        if is_empty_export_sheet(sales):
+            auth = auth.dropna(how="all")
+            sales = pd.DataFrame(
+                columns=[
+                    "学部",
+                    "年级",
+                    "战队",
+                    "接流人数",
+                    "电脑端全天在线人数",
+                    "电脑端全天在线率",
+                    "手机端全天在线人数",
+                    "手机端全天在线率",
+                ]
             )
+            bad = pd.DataFrame(
+                columns=[
+                    "学部",
+                    "年级",
+                    "战队",
+                    "辅导姓名",
+                    "企微-手机在线率",
+                    "企微-电脑在线率",
+                    "个微在线率",
+                    "电脑端不在线时段list",
+                    "手机端不在线时段list",
+                ]
+            )
+            roster = pd.DataFrame(
+                columns=[
+                    "学部",
+                    "年级",
+                    "战队",
+                    "辅导姓名",
+                    "企微-手机在线率",
+                    "企微-电脑在线率",
+                    "个微在线率",
+                    "手机端不在线时段list",
+                    "电脑端不在线时段list",
+                ]
+            )
+            bad_origin = sales_origin
         else:
-            bad["电脑端不在线时段list"] = ""
-        bad["电脑端不在线时段list"] = bad["电脑端不在线时段list"].fillna("").astype(str)
-        if not mobile_offline_map.empty:
-            bad = bad.merge(
-                mobile_offline_map,
-                on=["学部", "年级", "战队", "辅导姓名"],
-                how="left",
-            )
-        else:
-            bad["手机端不在线时段list"] = ""
-        bad["手机端不在线时段list"] = bad["手机端不在线时段list"].fillna("").astype(str)
+            bad = pd.read_excel(bad_file, sheet_name="数据透视表", header=1)
+            bad_origin = normalize_sales_origin_for_dashboard(pd.read_excel(bad_file, sheet_name="原表"))
 
-        roster = sales_origin[
-            [
-                "学部",
-                "年级",
-                "战队",
-                "老师姓名",
-                "app在线率",
-                "app不在线时段list",
-                "pc在线率",
-                "pc不在线时段list",
-                "风灵在线率",
-            ]
-        ].copy()
-        roster = roster.rename(
-            columns={
-                "老师姓名": "辅导姓名",
-                "app在线率": "企微-手机在线率",
-                "app不在线时段list": "手机端不在线时段list",
-                "pc在线率": "企微-电脑在线率",
-                "pc不在线时段list": "电脑端不在线时段list",
-                "风灵在线率": "个微在线率",
-            }
-        )
-        roster = roster.dropna(how="all")
-        roster["辅导姓名"] = roster["辅导姓名"].fillna("").astype(str).str.strip()
-        roster = roster[roster["辅导姓名"].ne("")]
-        roster = fill_group_cols(roster, ["学部", "年级", "战队"])
-        roster["战队"] = roster["战队"].astype(str).str.strip()
-        roster = roster[roster["战队"].ne("") & roster["战队"].str.lower().ne("nan")].copy()
-        roster["手机端不在线时段list"] = roster["手机端不在线时段list"].fillna("").astype(str).str.strip()
-        roster["电脑端不在线时段list"] = roster["电脑端不在线时段list"].fillna("").astype(str).str.strip()
-        if {"学部", "年级", "战队", "辅导姓名", "风灵微信在线率"}.issubset(set(gwei_origin.columns)):
-            gwei_detail = gwei_origin[["学部", "年级", "战队", "辅导姓名", "风灵微信在线率"]].copy()
-            gwei_detail = gwei_detail.dropna(how="all")
-            gwei_detail["辅导姓名"] = gwei_detail["辅导姓名"].fillna("").astype(str).str.strip()
-            gwei_detail = gwei_detail[gwei_detail["辅导姓名"].ne("")]
-            gwei_detail = fill_group_cols(gwei_detail, ["学部", "年级", "战队"])
-            for c in ["学部", "年级", "战队", "辅导姓名"]:
-                gwei_detail[c] = gwei_detail[c].fillna("").astype(str).str.strip()
-            gwei_detail["风灵微信在线率"] = pd.to_numeric(gwei_detail["风灵微信在线率"], errors="coerce")
-            gwei_detail = (
-                gwei_detail.sort_values(["学部", "年级", "战队", "辅导姓名"])
-                .drop_duplicates(subset=["学部", "年级", "战队", "辅导姓名"], keep="last")
-            )
-            roster = roster.merge(
-                gwei_detail.rename(columns={"风灵微信在线率": "__gwei_online_rate"}),
-                on=["学部", "年级", "战队", "辅导姓名"],
-                how="left",
-            )
-            roster["个微在线率"] = roster["__gwei_online_rate"].where(
-                roster["__gwei_online_rate"].notna(), roster["个微在线率"]
-            )
-            roster = roster.drop(columns=["__gwei_online_rate"])
-        roster["个微在线率"] = pd.to_numeric(roster["个微在线率"], errors="coerce")
-        roster = roster.drop_duplicates(subset=["学部", "年级", "战队", "辅导姓名"], keep="first")
+            auth = auth.dropna(how="all")
+            sales = sales.dropna(how="all")
+            bad = bad.dropna(how="all")
 
-        # User-specified correction: keep this team under 高二 for 高短
-        if segment == "高短":
+            if segment == "高短":
+                sales = remove_wrong_grade_duplicates(sales, GAODUAN_TEAM_GRADE_FIX)
+
+            bad = bad[
+                [
+                    "学部",
+                    "年级",
+                    "战队",
+                    "辅导姓名",
+                    "企微-手机在线率",
+                    "企微-电脑在线率",
+                    "个微在线率",
+                ]
+            ].copy()
+            bad = bad[bad["辅导姓名"].astype(str).str.strip().ne("")]
+            bad = fill_group_cols(bad, ["学部", "年级", "战队"])
+            bad["战队"] = bad["战队"].astype(str).str.strip()
+            bad = bad[bad["战队"].ne("") & bad["战队"].str.lower().ne("nan")].copy()
+            pc_offline_map = build_pc_offline_period_map(bad_origin)
+            mobile_offline_map = build_mobile_offline_period_map(bad_origin)
+            if not pc_offline_map.empty:
+                bad = bad.merge(
+                    pc_offline_map,
+                    on=["学部", "年级", "战队", "辅导姓名"],
+                    how="left",
+                )
+            else:
+                bad["电脑端不在线时段list"] = ""
+            bad["电脑端不在线时段list"] = bad["电脑端不在线时段list"].fillna("").astype(str)
+            if not mobile_offline_map.empty:
+                bad = bad.merge(
+                    mobile_offline_map,
+                    on=["学部", "年级", "战队", "辅导姓名"],
+                    how="left",
+                )
+            else:
+                bad["手机端不在线时段list"] = ""
+            bad["手机端不在线时段list"] = bad["手机端不在线时段list"].fillna("").astype(str)
+
+            roster = sales_origin[
+                [
+                    "学部",
+                    "年级",
+                    "战队",
+                    "老师姓名",
+                    "app在线率",
+                    "app不在线时段list",
+                    "pc在线率",
+                    "pc不在线时段list",
+                    "风灵在线率",
+                ]
+            ].copy()
+            roster = roster.rename(
+                columns={
+                    "老师姓名": "辅导姓名",
+                    "app在线率": "企微-手机在线率",
+                    "app不在线时段list": "手机端不在线时段list",
+                    "pc在线率": "企微-电脑在线率",
+                    "pc不在线时段list": "电脑端不在线时段list",
+                    "风灵在线率": "个微在线率",
+                }
+            )
+            roster = roster.dropna(how="all")
+            roster["辅导姓名"] = roster["辅导姓名"].fillna("").astype(str).str.strip()
+            roster = roster[roster["辅导姓名"].ne("")]
+            roster = fill_group_cols(roster, ["学部", "年级", "战队"])
+            roster["战队"] = roster["战队"].astype(str).str.strip()
+            roster = roster[roster["战队"].ne("") & roster["战队"].str.lower().ne("nan")].copy()
+            roster["手机端不在线时段list"] = roster["手机端不在线时段list"].fillna("").astype(str).str.strip()
+            roster["电脑端不在线时段list"] = roster["电脑端不在线时段list"].fillna("").astype(str).str.strip()
+            if {"学部", "年级", "战队", "辅导姓名", "风灵微信在线率"}.issubset(set(gwei_origin.columns)):
+                gwei_detail = gwei_origin[["学部", "年级", "战队", "辅导姓名", "风灵微信在线率"]].copy()
+                gwei_detail = gwei_detail.dropna(how="all")
+                gwei_detail["辅导姓名"] = gwei_detail["辅导姓名"].fillna("").astype(str).str.strip()
+                gwei_detail = gwei_detail[gwei_detail["辅导姓名"].ne("")]
+                gwei_detail = fill_group_cols(gwei_detail, ["学部", "年级", "战队"])
+                for c in ["学部", "年级", "战队", "辅导姓名"]:
+                    gwei_detail[c] = gwei_detail[c].fillna("").astype(str).str.strip()
+                gwei_detail["风灵微信在线率"] = pd.to_numeric(gwei_detail["风灵微信在线率"], errors="coerce")
+                gwei_detail = (
+                    gwei_detail.sort_values(["学部", "年级", "战队", "辅导姓名"])
+                    .drop_duplicates(subset=["学部", "年级", "战队", "辅导姓名"], keep="last")
+                )
+                roster = roster.merge(
+                    gwei_detail.rename(columns={"风灵微信在线率": "__gwei_online_rate"}),
+                    on=["学部", "年级", "战队", "辅导姓名"],
+                    how="left",
+                )
+                roster["个微在线率"] = roster["__gwei_online_rate"].where(
+                    roster["__gwei_online_rate"].notna(), roster["个微在线率"]
+                )
+                roster = roster.drop(columns=["__gwei_online_rate"])
+            roster["个微在线率"] = pd.to_numeric(roster["个微在线率"], errors="coerce")
+            roster = roster.drop_duplicates(subset=["学部", "年级", "战队", "辅导姓名"], keep="first")
+
+        if segment == "高短" and not sales.empty:
             # Keep only expected grades for 高短 bad list; removes anomalies like 六年级.
             allowed_high_grades = {"新兵营", "高一", "高二", "高三"}
             bad["__grade_clean"] = (
