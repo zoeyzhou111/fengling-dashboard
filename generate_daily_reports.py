@@ -15,7 +15,11 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter, range_boundaries
 
 
-SEGMENTS = ["初短一部", "初短二部", "初短三部", "郑州特战队", "小短", "高短"]
+SEGMENT_GROUPS = {
+    "初中": ["初短一部", "初短二部", "初短三部", "郑州特战队"],
+    "高中": ["小短", "高短"],
+}
+SEGMENTS = [seg for group in SEGMENT_GROUPS.values() for seg in group]
 SEGMENT_KEYS = {
     "初短一部": "chuduan1",
     "初短二部": "chuduan2",

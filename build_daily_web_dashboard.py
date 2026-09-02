@@ -12,6 +12,7 @@ import pandas as pd
 
 from generate_daily_reports import (
     SEGMENTS,
+    SEGMENT_GROUPS,
     SEGMENT_KEYS,
     expand_with_summary,
     norm_school,
@@ -22,15 +23,22 @@ from generate_daily_reports import (
 
 ROOT = Path(__file__).resolve().parent
 OUTPUT_ROOT = ROOT / "每日输出"
-INDEX_HTML = ROOT / "每日三表汇总看板.html"
+DAILY_HUB_HTML = ROOT / "每日三表汇总看板.html"
+DAILY_CHUDUAN_HTML = ROOT / "每日三表汇总看板-初中.html"
+DAILY_GAODUAN_HTML = ROOT / "每日三表汇总看板-高中.html"
+INDEX_HTML = DAILY_HUB_HTML
 DETAIL_DIR = ROOT / "每日三表汇总看板_详情"
 TEAM_DETAIL_DIR = DETAIL_DIR / "team"
-WEEKLY_HTML = ROOT / "周维度在线率看板.html"
+WEEKLY_HUB_HTML = ROOT / "周维度在线率看板.html"
+WEEKLY_CHUDUAN_HTML = ROOT / "周维度在线率看板-初中.html"
+WEEKLY_GAODUAN_HTML = ROOT / "周维度在线率看板-高中.html"
+WEEKLY_HTML = WEEKLY_HUB_HTML
 VISIT_STATS_HTML = ROOT / "访问统计看板.html"
 HISTORY_CSV = ROOT / "dashboard_history.csv"
 CONFIG_ENV = ROOT / "config.env"
 
 SEGMENTS = SEGMENTS
+SEGMENT_GROUPS = SEGMENT_GROUPS
 SEGMENT_KEYS = SEGMENT_KEYS
 GAODUAN_TEAM_GRADE_FIX = {
     "溯川向上-刘炎鹤": "高二",
@@ -919,7 +927,14 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
 .mini-table th, .mini-table td { font-size: 28px; }
 .nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
-.weekly-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.weekly-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.hub-grid { display: grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap: 18px; max-width: 960px; margin: 24px auto; }
+.hub-card { display: block; text-decoration: none; color: inherit; border: 1px solid #dbe2ef; border-radius: 14px; padding: 28px 24px; background: #fff; transition: .2s; }
+.hub-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(15,23,42,0.1); border-color: #93c5fd; }
+.hub-card-title { font-size: 30px; font-weight: 800; margin: 0 0 10px; color: #0f172a; }
+.hub-card-desc { font-size: 16px; color: #64748b; line-height: 1.6; margin: 0; }
+.hub-chuduan { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.hub-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
 .weekly-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6; }
 .weekly-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 6px solid #8b5cf6; }
@@ -1143,7 +1158,7 @@ def available_week_starts(history_df: pd.DataFrame, today: date) -> List[str]:
     return sorted(week_starts, reverse=True)
 
 
-def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
+def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str], *, title: str, back_href: str) -> str:
     if history_df.empty:
         return f"""
 <!doctype html>
@@ -1151,14 +1166,14 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>周维度在线率看板</title>
+  <title>{title}</title>
   <style>{base_styles(scale=1.0)}</style>
-  {analytics_head_html("周维度在线率看板")}
+  {analytics_head_html(title)}
 </head>
 <body>
   <div class="page">
-    <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
-    <h1 class="dashboard-title">周维度在线率看板（郑州）</h1>
+    <a class="nav-link" href="{back_href}">← 返回每日看板</a>
+    <h1 class="dashboard-title">{title}</h1>
     <div class="dashboard-sub">暂无历史数据，请先执行一次每日更新。</div>
   </div>
 </body>
@@ -1168,22 +1183,22 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     week_options = available_week_starts(history_df, today)
     default_week = week_start_for(today).isoformat()
     build_stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-    seg_headers = "".join([f"<th colspan='3'>{seg}</th>" for seg in SEGMENTS])
-    sub_headers = "".join(["<th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th>" for _ in SEGMENTS])
+    seg_headers = "".join([f"<th colspan='3'>{seg}</th>" for seg in segments])
+    sub_headers = "".join(["<th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th>" for _ in segments])
     return f"""
 <!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>周维度在线率看板</title>
+  <title>{title}</title>
   <style>{base_styles(scale=1.0)}</style>
-  {analytics_head_html("周维度在线率看板")}
+  {analytics_head_html(title)}
 </head>
 <body>
   <div class="page">
-    <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
-    <h1 class="dashboard-title">周维度在线率看板（郑州）</h1>
+    <a class="nav-link" href="{back_href}">← 返回每日看板</a>
+    <h1 class="dashboard-title">{title}</h1>
     <div class="weekly-query-bar">
       <label for="weekSelect">历史周查询</label>
       <select id="weekSelect" aria-label="选择历史周"></select>
@@ -1224,7 +1239,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
     const HISTORY = {json.dumps(history_records, ensure_ascii=False)};
     const WEEK_OPTIONS = {json.dumps(week_options, ensure_ascii=False)};
     const DEFAULT_WEEK = {json.dumps(default_week, ensure_ascii=False)};
-    const SEGMENTS = {json.dumps(SEGMENTS, ensure_ascii=False)};
+    const SEGMENTS = {json.dumps(segments, ensure_ascii=False)};
     const SEGMENT_KEYS = {json.dumps(SEGMENT_KEYS, ensure_ascii=False)};
     const SEG_COLORS = {json.dumps({"初短一部": "#ef4444", "初短二部": "#8b5cf6", "初短三部": "#0891b2", "郑州特战队": "#e11d48", "小短": "#22c55e", "高短": "#f59e0b"}, ensure_ascii=False)};
     const TODAY_WEEK = {json.dumps(default_week, ensure_ascii=False)};
@@ -1442,10 +1457,107 @@ def build_weekly_page(history_df: pd.DataFrame, today: date) -> str:
 
 def write_weekly_dashboard(history_df: pd.DataFrame, date_text: str) -> None:
     page_date = parse_date_text(date_text) if date_text else date.today()
-    WEEKLY_HTML.write_text(build_weekly_page(history_df, page_date), encoding="utf-8")
+    WEEKLY_CHUDUAN_HTML.write_text(
+        build_weekly_page(
+            history_df,
+            page_date,
+            SEGMENT_GROUPS["初中"],
+            title="周维度在线率看板（初中）",
+            back_href="每日三表汇总看板-初中.html",
+        ),
+        encoding="utf-8",
+    )
+    WEEKLY_GAODUAN_HTML.write_text(
+        build_weekly_page(
+            history_df,
+            page_date,
+            SEGMENT_GROUPS["高中"],
+            title="周维度在线率看板（高中）",
+            back_href="每日三表汇总看板-高中.html",
+        ),
+        encoding="utf-8",
+    )
+    WEEKLY_HUB_HTML.write_text(build_weekly_hub_page(), encoding="utf-8")
 
 
-def build_index_page(summary_rows: List[dict], date_text: str) -> str:
+def build_daily_hub_page(date_text: str) -> str:
+    return f"""
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>每日三表汇总看板</title>
+  <style>{base_styles(scale=1.0)}</style>
+  {analytics_head_html("每日三表汇总看板")}
+</head>
+<body>
+  <div class="page">
+    <h1 class="dashboard-title">每日三表汇总看板（郑州）</h1>
+    <div class="dashboard-sub">{date_text}｜请选择学段进入对应看板</div>
+    <div class="weekly-inline-link-wrap">
+      <a class="weekly-inline-link" href="周维度在线率看板.html">每周维度在线率看板（点击进入）</a>
+      <span class="weekly-inline-sep">｜</span>
+      <a class="weekly-inline-link" href="访问统计看板.html">看板访问统计（点击进入）</a>
+    </div>
+    <div class="hub-grid">
+      <a class="hub-card hub-chuduan" href="每日三表汇总看板-初中.html">
+        <h2 class="hub-card-title">初中看板</h2>
+        <p class="hub-card-desc">初短一部 · 初短二部 · 初短三部 · 郑州特战队</p>
+      </a>
+      <a class="hub-card hub-gaoduan" href="每日三表汇总看板-高中.html">
+        <h2 class="hub-card-title">高中看板</h2>
+        <p class="hub-card-desc">小短 · 高短</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+
+def build_weekly_hub_page() -> str:
+    return f"""
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>周维度在线率看板</title>
+  <style>{base_styles(scale=1.0)}</style>
+  {analytics_head_html("周维度在线率看板")}
+</head>
+<body>
+  <div class="page">
+    <a class="nav-link" href="每日三表汇总看板.html">← 返回每日看板</a>
+    <h1 class="dashboard-title">周维度在线率看板（郑州）</h1>
+    <div class="dashboard-sub">请选择学段查看周维度趋势</div>
+    <div class="hub-grid">
+      <a class="hub-card hub-chuduan" href="周维度在线率看板-初中.html">
+        <h2 class="hub-card-title">初中周维度</h2>
+        <p class="hub-card-desc">初短一部 · 初短二部 · 初短三部 · 郑州特战队</p>
+      </a>
+      <a class="hub-card hub-gaoduan" href="周维度在线率看板-高中.html">
+        <h2 class="hub-card-title">高中周维度</h2>
+        <p class="hub-card-desc">小短 · 高短</p>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+
+def build_daily_dashboard_page(
+    summary_rows: List[dict],
+    date_text: str,
+    segments: List[str],
+    *,
+    title: str,
+    weekly_href: str,
+    back_href: str = "每日三表汇总看板.html",
+) -> str:
+    row_map = {row["segment"]: row for row in summary_rows}
     segment_html = []
     class_map = {
         "初短一部": "segment-chuduan1",
@@ -1455,8 +1567,10 @@ def build_index_page(summary_rows: List[dict], date_text: str) -> str:
         "小短": "segment-xiaoduan",
         "高短": "segment-gaoduan",
     }
-    for row in summary_rows:
-        segment = row["segment"]
+    for segment in segments:
+        row = row_map.get(segment)
+        if row is None:
+            continue
         key = SEGMENT_KEYS[segment]
         seg_cls = class_map.get(segment, "")
         segment_html.append(
@@ -1489,19 +1603,20 @@ def build_index_page(summary_rows: List[dict], date_text: str) -> str:
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>每日三表汇总看板</title>
+  <title>{title}</title>
   <style>{base_styles(scale=1.0)}</style>
-  {analytics_head_html("每日三表汇总看板")}
+  {analytics_head_html(title)}
 </head>
 <body>
   <div class="page">
-    <h1 class="dashboard-title">每日三表汇总看板（郑州）</h1>
+    <a class="nav-link" href="{back_href}">← 返回看板首页</a>
+    <h1 class="dashboard-title">{title}</h1>
     <div class="weekly-inline-link-wrap">
-      <a class="weekly-inline-link" href="周维度在线率看板.html">每周维度在线率看板（点击进入）</a>
+      <a class="weekly-inline-link" href="{weekly_href}">每周维度在线率看板（点击进入）</a>
       <span class="weekly-inline-sep">｜</span>
       <a class="weekly-inline-link" href="访问统计看板.html">看板访问统计（点击进入）</a>
     </div>
-    <div class="dashboard-sub">{date_text}｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
+    <div class="dashboard-sub">{date_text}｜点击卡片进入对应明细页（战队维度）</div>
     {''.join(segment_html)}
   </div>
 </body>
@@ -1822,12 +1937,36 @@ def main(as_of_date: str = "") -> None:
     date_text = max(all_dates) if all_dates else ""
     if as_of_date:
         date_text = as_of_date
-    INDEX_HTML.write_text(build_index_page(summary_rows, date_text), encoding="utf-8")
+    DAILY_HUB_HTML.write_text(build_daily_hub_page(date_text), encoding="utf-8")
+    DAILY_CHUDUAN_HTML.write_text(
+        build_daily_dashboard_page(
+            summary_rows,
+            date_text,
+            SEGMENT_GROUPS["初中"],
+            title="每日三表汇总看板（初中）",
+            weekly_href="周维度在线率看板-初中.html",
+        ),
+        encoding="utf-8",
+    )
+    DAILY_GAODUAN_HTML.write_text(
+        build_daily_dashboard_page(
+            summary_rows,
+            date_text,
+            SEGMENT_GROUPS["高中"],
+            title="每日三表汇总看板（高中）",
+            weekly_href="周维度在线率看板-高中.html",
+        ),
+        encoding="utf-8",
+    )
     VISIT_STATS_HTML.write_text(build_visit_stats_page(), encoding="utf-8")
     history_df = update_history(parse_date_text(date_text) if date_text else date.today(), summary_rows)
     write_weekly_dashboard(history_df, date_text)
-    print(f"Generated: {INDEX_HTML}")
-    print(f"Generated: {WEEKLY_HTML}")
+    print(f"Generated: {DAILY_HUB_HTML}")
+    print(f"Generated: {DAILY_CHUDUAN_HTML}")
+    print(f"Generated: {DAILY_GAODUAN_HTML}")
+    print(f"Generated: {WEEKLY_HUB_HTML}")
+    print(f"Generated: {WEEKLY_CHUDUAN_HTML}")
+    print(f"Generated: {WEEKLY_GAODUAN_HTML}")
     print(f"Generated: {VISIT_STATS_HTML}")
     print(f"Detail pages: {DETAIL_DIR}")
     print(f"History file: {HISTORY_CSV}")

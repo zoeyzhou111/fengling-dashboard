@@ -59,7 +59,14 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
 .mini-table th, .mini-table td { font-size: 28px; }
 .nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
-.weekly-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.weekly-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.hub-grid { display: grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap: 18px; max-width: 960px; margin: 24px auto; }
+.hub-card { display: block; text-decoration: none; color: inherit; border: 1px solid #dbe2ef; border-radius: 14px; padding: 28px 24px; background: #fff; transition: .2s; }
+.hub-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(15,23,42,0.1); border-color: #93c5fd; }
+.hub-card-title { font-size: 30px; font-weight: 800; margin: 0 0 10px; color: #0f172a; }
+.hub-card-desc { font-size: 16px; color: #64748b; line-height: 1.6; margin: 0; }
+.hub-chuduan { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.hub-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
 .weekly-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6; }
 .weekly-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 6px solid #8b5cf6; }
@@ -97,139 +104,22 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 <body>
   <div class="page">
     <h1 class="dashboard-title">每日三表汇总看板（郑州）</h1>
+    <div class="dashboard-sub">2026-09-01｜请选择学段进入对应看板</div>
     <div class="weekly-inline-link-wrap">
       <a class="weekly-inline-link" href="周维度在线率看板.html">每周维度在线率看板（点击进入）</a>
       <span class="weekly-inline-sep">｜</span>
       <a class="weekly-inline-link" href="访问统计看板.html">看板访问统计（点击进入）</a>
     </div>
-    <div class="dashboard-sub">2026-09-01｜按学部分组｜点击卡片进入对应明细页（战队维度）</div>
-    
-<section class="segment-block segment-chuduan1">
-  <h2 class="segment-name">初短一部</h2>
-  <div class="cards">
-    <a class="card-link card-auth" href="每日三表汇总看板_详情/chuduan1_auth.html">
-      <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">33.51%</div>
-      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
-    </a>
-    <a class="card-link card-online" href="每日三表汇总看板_详情/chuduan1_sales.html">
-      <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">28.22%</div>
-      <div class="card-sub">电脑端：38.40%｜手机端：18.04%</div>
-    </a>
-    <a class="card-link card-bad" href="每日三表汇总看板_详情/chuduan1_bad.html">
-      <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">135</div>
-      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
-    </a>
-  </div>
-</section>
-
-<section class="segment-block segment-chuduan2">
-  <h2 class="segment-name">初短二部</h2>
-  <div class="cards">
-    <a class="card-link card-auth" href="每日三表汇总看板_详情/chuduan2_auth.html">
-      <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">45.14%</div>
-      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
-    </a>
-    <a class="card-link card-online" href="每日三表汇总看板_详情/chuduan2_sales.html">
-      <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">32.29%</div>
-      <div class="card-sub">电脑端：43.26%｜手机端：21.32%</div>
-    </a>
-    <a class="card-link card-bad" href="每日三表汇总看板_详情/chuduan2_bad.html">
-      <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">108</div>
-      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
-    </a>
-  </div>
-</section>
-
-<section class="segment-block segment-chuduan3">
-  <h2 class="segment-name">初短三部</h2>
-  <div class="cards">
-    <a class="card-link card-auth" href="每日三表汇总看板_详情/chuduan3_auth.html">
-      <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">#N/A</div>
-      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
-    </a>
-    <a class="card-link card-online" href="每日三表汇总看板_详情/chuduan3_sales.html">
-      <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">#N/A</div>
-      <div class="card-sub">电脑端：#N/A｜手机端：#N/A</div>
-    </a>
-    <a class="card-link card-bad" href="每日三表汇总看板_详情/chuduan3_bad.html">
-      <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">0</div>
-      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
-    </a>
-  </div>
-</section>
-
-<section class="segment-block segment-tezhan">
-  <h2 class="segment-name">郑州特战队</h2>
-  <div class="cards">
-    <a class="card-link card-auth" href="每日三表汇总看板_详情/tezhan_auth.html">
-      <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">#N/A</div>
-      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
-    </a>
-    <a class="card-link card-online" href="每日三表汇总看板_详情/tezhan_sales.html">
-      <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">#N/A</div>
-      <div class="card-sub">电脑端：#N/A｜手机端：#N/A</div>
-    </a>
-    <a class="card-link card-bad" href="每日三表汇总看板_详情/tezhan_bad.html">
-      <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">0</div>
-      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
-    </a>
-  </div>
-</section>
-
-<section class="segment-block segment-xiaoduan">
-  <h2 class="segment-name">小短</h2>
-  <div class="cards">
-    <a class="card-link card-auth" href="每日三表汇总看板_详情/xiaoduan_auth.html">
-      <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">0.00%</div>
-      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
-    </a>
-    <a class="card-link card-online" href="每日三表汇总看板_详情/xiaoduan_sales.html">
-      <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">70.45%</div>
-      <div class="card-sub">电脑端：77.27%｜手机端：63.64%</div>
-    </a>
-    <a class="card-link card-bad" href="每日三表汇总看板_详情/xiaoduan_bad.html">
-      <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">11</div>
-      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
-    </a>
-  </div>
-</section>
-
-<section class="segment-block segment-gaoduan">
-  <h2 class="segment-name">高短</h2>
-  <div class="cards">
-    <a class="card-link card-auth" href="每日三表汇总看板_详情/gaoduan_auth.html">
-      <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">85.89%</div>
-      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
-    </a>
-    <a class="card-link card-online" href="每日三表汇总看板_详情/gaoduan_sales.html">
-      <div class="card-label">企微在线汇总率</div>
-      <div class="card-value">57.98%</div>
-      <div class="card-sub">电脑端：69.94%｜手机端：46.01%</div>
-    </a>
-    <a class="card-link card-bad" href="每日三表汇总看板_详情/gaoduan_bad.html">
-      <div class="card-label">每日不在线汇总人数</div>
-      <div class="card-value">64</div>
-      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
-    </a>
-  </div>
-</section>
-
+    <div class="hub-grid">
+      <a class="hub-card hub-chuduan" href="每日三表汇总看板-初中.html">
+        <h2 class="hub-card-title">初中看板</h2>
+        <p class="hub-card-desc">初短一部 · 初短二部 · 初短三部 · 郑州特战队</p>
+      </a>
+      <a class="hub-card hub-gaoduan" href="每日三表汇总看板-高中.html">
+        <h2 class="hub-card-title">高中看板</h2>
+        <p class="hub-card-desc">小短 · 高短</p>
+      </a>
+    </div>
   </div>
 </body>
 </html>
