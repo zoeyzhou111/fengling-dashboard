@@ -28,6 +28,7 @@ GRADE_LABEL_MAP = {
     "高阶一": "高一",
     "高阶二": "高二",
     "高阶三": "高三",
+    "全部": "全年级",
 }
 SEGMENT_KEYS = {
     "初短一部": "chuduan1",
@@ -282,7 +283,7 @@ def norm_school(grade, src=None, xuebu=None):
             if xuebu_norm in ("爱学", "初中"):
                 return "初中"
         return "初中"
-    if g.startswith("小") or g == "全年级":
+    if g.startswith("小") or g in ("全年级", "全部"):
         return "小学"
     if g.startswith("高"):
         return "高中"
@@ -312,8 +313,8 @@ def assign_segment(oc, src, grade=None):
     if oc == "郑州二部":
         return "初短二部"
     if oc == "郑州":
-        # 新规则：郑州中心仅全年级归小短，其余郑州全部归高短
-        if g == "全年级":
+        # 新规则：郑州中心仅全年级/全部归小短，其余郑州全部归高短
+        if g in ("全年级", "全部"):
             return "小短"
         return "高短"
     return "其他"
