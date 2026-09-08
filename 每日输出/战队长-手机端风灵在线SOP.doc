@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>战队长 · 手机端风灵在线操作SOP</title>
+<style>
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background:#f5f6f8; color:#1f2329; margin:0; padding:24px; line-height:1.6; }
+  .doc { max-width:920px; margin:0 auto; background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,.08); overflow:hidden; }
+  .section { padding:24px 36px; border-bottom:1px solid #f0f0f0; }
+  .section-title { font-size:18px; font-weight:700; color:#1677FF; margin:0 0 16px; padding-left:12px; border-left:4px solid #1677FF; }
+  .tip-box { background:#FFFBE6; border:1px solid #FFE58F; border-radius:8px; padding:12px 16px; font-size:13px; color:#874D00; margin-bottom:16px; }
+  .data-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .data-table th { background:#1677FF; color:#fff; padding:8px 10px; text-align:center; font-weight:700; }
+  .data-table td { border:1px solid #e5e6eb; padding:8px 10px; vertical-align:top; }
+  .data-table tr:nth-child(even) { background:#fafafa; }
+  .paste-hint { background:#E6F4FF; border:1px dashed #1677FF; border-radius:8px; padding:10px 14px; font-size:12px; color:#0958D9; margin-bottom:16px; }
+  .footer { padding:16px 36px; background:#fafafa; font-size:12px; color:#999; }
+  .check { margin:4px 0; }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <table width="100%" border="0" cellpadding="0" cellspacing="0">
+    <tr><td bgcolor="#1677FF" style="padding:32px 36px;">
+      <p style="margin:0 0 8px;font-size:24px;font-weight:700;color:#FFFFFF;">战队长 · 手机端风灵在线操作SOP</p>
+      <p style="margin:0;font-size:14px;color:#E6F4FF;">
+        <span style="margin-right:20px;">适用：初短一部 / 初短二部战队长及业务伙伴</span>
+        <span style="margin-right:20px;">填写：在线文档，伙伴自填、战队长督促</span>
+        <span>POC 集中处理：14:00</span>
+      </p>
+    </td></tr>
+  </table>
+
+  <div class="section">
+    <div class="paste-hint"><b>粘贴提示：</b>请用 Word/WPS 打开同目录下的 <b>.doc</b> 文件，复制粘贴到钉钉文档，可保留填色。浏览器打开本页也可直接转发链接。</div>
+    <div class="tip-box">
+      <b>完成标准（只记这一句）：</b>电脑端在线不算完成。口头「登了」不算。次日《不在线名单》里没有这个人，才算完成。
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">一、在线文档怎么用（伙伴填，战队长督促）</div>
+    <div class="tip-box">POC 每天把当日「手机端不在线名单」同步到在线文档（一部、二部各一页）。<b>原因由业务伙伴自己填</b>，战队长负责催齐、核对分类对不对。不要再一对一收微信截图当主流程。</div>
+    <table class="data-table">
+      <tr>
+        <th width="16%">角色</th>
+        <th>做什么</th>
+        <th>做到什么算完成</th>
+        <th>不要</th>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#E6F4FF"><b>业务伙伴</b></td>
+        <td>13:00 后打开在线文档，找到自己的名字。先填「是否已登录」。未登录的按五类选问题分类，并补具体现象 / 截图 / UDID。</td>
+        <td>自己那一行绿色列填完</td>
+        <td>不要只在群里说一声「我登了」；不要私聊POC</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFF7E6"><b>战队长</b></td>
+        <td>开会时督促本队所有人填完。抽查分类是否选对、封号有没有截图、风灵有没有UDID。空白行点名补填。</td>
+        <td>13:50 前本队无空白分类</td>
+        <td>不要替所有人代填（除非伙伴当场无法操作）；不要漏掉「当天新出现」的人</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFF1F0"><b>POC 周萌</b></td>
+        <td>14:00 只筛选字段齐全的三类：设备问题、封号、风灵问题，打包处理。</td>
+        <td>齐全工单当天转出</td>
+        <td>空白、缺截图、缺UDID一律不接，退回战队长</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">二、每天时间（13:00 开会）</div>
+    <table class="data-table">
+      <tr>
+        <th width="12%">步骤</th>
+        <th width="16%">时间</th>
+        <th>伙伴</th>
+        <th>战队长</th>
+        <th>不要做什么</th>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#E6F4FF"><b>第1步<br>对名单</b></td>
+        <td>13:00–13:20<br>（周二 18:00 起）</td>
+        <td>自己填「是否已登录」</td>
+        <td>打开本队名单，先清已登录</td>
+        <td>不要把已登录的人再报给POC</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFF7E6"><b>第2步<br>填原因</b></td>
+        <td>13:20–13:40</td>
+        <td>未登录的自己选五类并补齐字段</td>
+        <td>催空白行、核对分类</td>
+        <td>不要写长段解释；不要私聊POC逐人问</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#F6FFED"><b>第3步<br>交齐</b></td>
+        <td>13:40–13:50</td>
+        <td>确认自己那一行已提交</td>
+        <td>本队无空白后即可；个人原因自己盯切机</td>
+        <td>不要让伙伴直接找王慧或周萌</td>
+      </tr>
+    </table>
+    <p style="font-size:13px;color:#666;margin:12px 0 0;">业务时间 13:00–22:00。13:00 前不要催登录。周一休息，不发新名单。</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">三、五类问题怎么标、谁去办</div>
+    <p style="font-size:13px;color:#666;margin:0 0 12px;">与《企微手机端问题处理》一致。每人只能选一类，选错了会打回。</p>
+    <table class="data-table">
+      <tr>
+        <th width="12%">问题分类</th>
+        <th>什么情况算这一类</th>
+        <th>你怎么填表</th>
+        <th>解决路径（谁去办）</th>
+        <th>怎样算完成</th>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#F6FFED"><b>已登录</b></td>
+        <td>开会时已经在工作机登上风灵</td>
+        <td>是否已登录=是；问题分类=已登录</td>
+        <td>不用报POC。次日看名单还在不在。</td>
+        <td>次日名单里没这个人</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFF7E6"><b>设备问题</b></td>
+        <td>手机卡顿 / 手机无法使用 / 没有工作机</td>
+        <td>问题分类=设备问题；具体现象三选一写清</td>
+        <td>POC 14:00 打包给五楼行政<b>王慧</b>发机或换机。你不要让伙伴自己去找。</td>
+        <td>领到能用的工作机并登录</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFF1F0"><b>封号</b></td>
+        <td>企微被封 / 企微提示有风险</td>
+        <td>问题分类=封号；封号截图已交=是</td>
+        <td>把截图交给POC<b>周萌</b>报备/解封。没截图不接。</td>
+        <td>解封后登录，或有预计解封日</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#FFF1F0"><b>风灵问题</b></td>
+        <td>登录提示环境异常 / 频繁退登 / 要在同一环境登录</td>
+        <td>问题分类=风灵问题；填写UDID</td>
+        <td>打开「企微插件」App复制UDID，交给POC<b>周萌</b>提后台。没UDID不接。</td>
+        <td>后台处理后能登录</td>
+      </tr>
+      <tr>
+        <td align="center" bgcolor="#E6F4FF"><b>个人原因</b></td>
+        <td>私人手机号 / 不想登录在工作机</td>
+        <td>问题分类=个人原因；写清现象</td>
+        <td><b>你自己</b>限期让伙伴切回工作机。POC不处理。</td>
+        <td>切到工作机后次日名单消失</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">四、怎样最高效把在线做上去</div>
+    <div class="tip-box">电脑端在线高、手机端低 = 人在班，但没登工作机。最快的办法是：先销已登录，再打包同类问题，不要一个人一个人跟。</div>
+    <table class="data-table">
+      <tr>
+        <th width="18%">优先顺序</th>
+        <th>做什么</th>
+        <th>为什么最高效</th>
+        <th>不要</th>
+      </tr>
+      <tr>
+        <td bgcolor="#E6F4FF"><b>① 先清「已登录」</b></td>
+        <td>开会前10分钟只问登没登</td>
+        <td>这类人不用报POC，当天就能从待办里拿掉一批</td>
+        <td>不要把已登录再写成设备/风灵</td>
+      </tr>
+      <tr>
+        <td bgcolor="#E6F4FF"><b>② 当场收齐截图和UDID</b></td>
+        <td>封号收截图，风灵收UDID</td>
+        <td>POC 14:00只批处理齐全的单。缺一张图、缺一个号，整单退回</td>
+        <td>不要会后再补、不要发到POC微信里零散补</td>
+      </tr>
+      <tr>
+        <td bgcolor="#E6F4FF"><b>③ 没工作机的整队打包</b></td>
+        <td>写成设备问题-没有工作机</td>
+        <td>行政一次发机比逐个催快；领机当天必须登录</td>
+        <td>不要让伙伴自己去找王慧</td>
+      </tr>
+      <tr>
+        <td bgcolor="#E6F4FF"><b>④ 个人原因你自己死盯</b></td>
+        <td>私人手机登录的，当天必须切工作机</td>
+        <td>这类POC管不了。拖一天，次日名单还在，率上不去</td>
+        <td>不要指望POC去劝说</td>
+      </tr>
+      <tr>
+        <td bgcolor="#E6F4FF"><b>⑤ 次日只追未兑现的人</b></td>
+        <td>对照新名单：昨天该好却还在的人 + <b>今天新出现的人</b>都要填</td>
+        <td>全量再跟一遍最浪费时间</td>
+        <td>不要每天把全队名单重念一遍</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">五、周维度怎么盯（第二天名单外的人怎么办）</div>
+    <div class="tip-box">
+      <b>结论：不要把全部人员每天都铺进一张大表让战队长填。</b>每天行动只用「当天手机端不在线的人」。周提升看三个数：<b>销账、新增、连续未闭环</b>。第二天出现第一天名单外的人，属于正常「新增」，当天就要填原因，不是流程失败。
+    </div>
+    <table class="data-table">
+      <tr>
+        <th width="22%">做法</th>
+        <th>怎么做</th>
+        <th>优点</th>
+        <th>缺点</th>
+        <th>建议</th>
+      </tr>
+      <tr>
+        <td bgcolor="#F6FFED"><b>推荐：每日行动名单<br>+ 三个对比数</b></td>
+        <td>每天在线文档只放当天不在线的人（伙伴自填）。POC用昨天名单和今天名单自动对比：<br>①销账＝昨天有、今天没有<br>②新增＝今天有、昨天没有<br>③连续＝两天都有</td>
+        <td>开会只盯要填的人；新增不会漏；连续未闭环才是真正难啃的</td>
+        <td>需要每天更新名单（本来就要做）</td>
+        <td><b>采用。</b>战队长13:00重点催：连续 + 新增。已销账的不再念</td>
+      </tr>
+      <tr>
+        <td>全员名单，每天一列</td>
+        <td>所有人一行，周二到周日每天一列，填在线/不在线</td>
+        <td>一周谁断过线一目了然</td>
+        <td>表极大，伙伴懒得填，开会找不到重点，新增和满勤混在一起</td>
+        <td>不给一线填。如需周报，由POC后台自动生成给战队长看，不要求人手填</td>
+      </tr>
+      <tr>
+        <td>只追第一天名单</td>
+        <td>周二名单跟到周日，不管中途新掉线的人</td>
+        <td>名单固定</td>
+        <td>第二天新掉线的人没人管，周在线率拉不起来</td>
+        <td>不用</td>
+      </tr>
+    </table>
+    <p style="font-size:13px;margin:14px 0 8px;"><b>战队长每天开会只看三类人（都在当天文档里）：</b></p>
+    <table class="data-table">
+      <tr>
+        <th width="20%">类型</th>
+        <th>怎么认</th>
+        <th>怎么处理</th>
+      </tr>
+      <tr>
+        <td bgcolor="#FFF1F0"><b>连续未闭环</b></td>
+        <td>昨天在名单里，今天还在</td>
+        <td>优先。昨天填过的原因还在就核对有没有兑现；没填过的当天必须填完</td>
+      </tr>
+      <tr>
+        <td bgcolor="#FFF7E6"><b>新增不在线</b></td>
+        <td>昨天不在名单，今天出现了（第一天名单外的人）</td>
+        <td>当成新单：伙伴自己填五类。不要说「不在昨天名单就不管」</td>
+      </tr>
+      <tr>
+        <td bgcolor="#F6FFED"><b>已销账</b></td>
+        <td>昨天在，今天不在</td>
+        <td>报喜即可，开会不用再点名</td>
+      </tr>
+    </table>
+    <p style="font-size:13px;color:#666;margin:12px 0 0;">周目标建议看学部手机端满勤率，以及「连续未闭环人数」是否下降。新增每天都会有，允许存在，但必须当天完成分类；连续未闭环才考核战队长。</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">六、13:50 交齐前自检</div>
+    <table class="data-table">
+      <tr><th width="8%">勾选</th><th>确认事项</th></tr>
+      <tr><td align="center">□</td><td>在线文档里本队当天名单，每个人都有「是否已登录」（伙伴自填或战队长确认）</td></tr>
+      <tr><td align="center">□</td><td>未登录的人都有且只有一个问题分类</td></tr>
+      <tr><td align="center">□</td><td>封号的人都是「截图已交=是」，风灵问题都有UDID，否则别进POC</td></tr>
+      <tr><td align="center">□</td><td>今天新出现的人（不在昨天名单里）也已经填完，没有漏人</td></tr>
+      <tr><td align="center">□</td><td>个人原因已告知伙伴截止时间，不出现在POC待办里</td></tr>
+      <tr><td align="center">□</td><td>没有让伙伴私聊王慧 / 周萌</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">配套：每日在线文档（伙伴自填）｜问题分类以《企微手机端问题处理》为准｜POC：周萌　行政发机：王慧</div>
+</div>
+</body>
+</html>
