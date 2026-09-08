@@ -1457,27 +1457,16 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
 
 def write_weekly_dashboard(history_df: pd.DataFrame, date_text: str) -> None:
     page_date = parse_date_text(date_text) if date_text else date.today()
-    WEEKLY_CHUDUAN_HTML.write_text(
+    WEEKLY_HUB_HTML.write_text(
         build_weekly_page(
             history_df,
             page_date,
-            SEGMENT_GROUPS["初中"],
-            title="周维度在线率看板（初中）",
-            back_href="每日三表汇总看板-初中.html",
+            SEGMENTS,
+            title="周维度在线率看板（郑州）",
+            back_href="每日三表汇总看板.html",
         ),
         encoding="utf-8",
     )
-    WEEKLY_GAODUAN_HTML.write_text(
-        build_weekly_page(
-            history_df,
-            page_date,
-            SEGMENT_GROUPS["高中"],
-            title="周维度在线率看板（高中）",
-            back_href="每日三表汇总看板-高中.html",
-        ),
-        encoding="utf-8",
-    )
-    WEEKLY_HUB_HTML.write_text(build_weekly_hub_page(), encoding="utf-8")
 
 
 def build_daily_hub_page(date_text: str) -> str:
@@ -1956,7 +1945,7 @@ def main(as_of_date: str = "") -> None:
             date_text,
             SEGMENT_GROUPS["初中"],
             title="每日三表汇总看板（初中）",
-            weekly_href="周维度在线率看板-初中.html",
+            weekly_href="周维度在线率看板.html",
         ),
         encoding="utf-8",
     )
@@ -1966,7 +1955,7 @@ def main(as_of_date: str = "") -> None:
             date_text,
             SEGMENT_GROUPS["高中"],
             title="每日三表汇总看板（高中）",
-            weekly_href="周维度在线率看板-高中.html",
+            weekly_href="周维度在线率看板.html",
         ),
         encoding="utf-8",
     )
@@ -1977,8 +1966,6 @@ def main(as_of_date: str = "") -> None:
     print(f"Generated: {DAILY_CHUDUAN_HTML}")
     print(f"Generated: {DAILY_GAODUAN_HTML}")
     print(f"Generated: {WEEKLY_HUB_HTML}")
-    print(f"Generated: {WEEKLY_CHUDUAN_HTML}")
-    print(f"Generated: {WEEKLY_GAODUAN_HTML}")
     print(f"Generated: {VISIT_STATS_HTML}")
     print(f"Detail pages: {DETAIL_DIR}")
     print(f"History file: {HISTORY_CSV}")
