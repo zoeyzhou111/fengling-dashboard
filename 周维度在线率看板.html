@@ -112,7 +112,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
       <button type="button" class="weekly-query-btn" id="nextWeekBtn">下一周</button>
     </div>
     <div class="dashboard-sub" id="weekSubtitle"></div>
-    <div class="dashboard-sub">页面版本：2026-09-08 12:58</div>
+    <div class="dashboard-sub">页面版本：2026-09-08 13:04</div>
     <section class="weekly-grid" id="weeklyCards"></section>
     <section class="chart-grid">
       <div class="chart-card">
@@ -134,7 +134,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
     </section>
     <table class="sheet-table weekly-table">
       <thead>
-        <tr><th rowspan="2">日期</th><th colspan='3'>初短一部</th><th colspan='3'>初短二部</th><th colspan='3'>初短三部</th><th colspan='3'>郑州特战队</th><th colspan='3'>小短</th><th colspan='3'>高短</th></tr>
+        <tr><th rowspan="2">日期</th><th colspan='3'>初短一部</th><th colspan='3'>初短二部</th><th colspan='3'>初短三部</th><th colspan='3'>郑州特战团</th><th colspan='3'>小短（小学）</th><th colspan='3'>高短</th></tr>
         <tr><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th><th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th></tr>
       </thead>
       <tbody id="weeklyPivotBody"></tbody>
@@ -147,6 +147,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
     const DEFAULT_WEEK = "2026-08-31";
     const SEGMENTS = ["初短一部", "初短二部", "初短三部", "郑州特战队", "小短", "高短"];
     const SEGMENT_KEYS = {"初短一部": "chuduan1", "初短二部": "chuduan2", "初短三部": "chuduan3", "郑州特战队": "tezhan", "小短": "xiaoduan", "高短": "gaoduan"};
+    const SEGMENT_LABELS = {"初短一部": "初短一部", "初短二部": "初短二部", "初短三部": "初短三部", "郑州特战队": "郑州特战团", "小短": "小短（小学）", "高短": "高短"};
     const SEG_COLORS = {"初短一部": "#ef4444", "初短二部": "#8b5cf6", "初短三部": "#0891b2", "郑州特战队": "#e11d48", "小短": "#22c55e", "高短": "#f59e0b"};
     const TODAY_WEEK = "2026-08-31";
 
@@ -220,7 +221,7 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
         const numMap = Object.fromEntries(segRows.map((row) => [row.date, row[numKey]]));
         const denMap = Object.fromEntries(segRows.map((row) => [row.date, row[denKey]]));
         return {
-          label: seg,
+          label: SEGMENT_LABELS[seg] || seg,
           data: labels.map((d) => {
             const val = rateMap[d];
             return val === null || val === undefined ? 0 : Math.round(val * 10000) / 100;
@@ -240,14 +241,14 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
         const segRows = rows.filter((row) => row.segment === seg);
         const cardCls = "weekly-" + (SEGMENT_KEYS[seg] || "");
         if (!segRows.length) {
-          return `<div class="weekly-card ${cardCls}"><div class="weekly-seg">${seg}</div><div class="weekly-kpi">该周暂无数据</div></div>`;
+          return `<div class="weekly-card ${cardCls}"><div class="weekly-seg">${SEGMENT_LABELS[seg] || seg}</div><div class="weekly-kpi">该周暂无数据</div></div>`;
         }
         const gweiAvg = avg(segRows.map((row) => row.gwei_rate));
         const mobileAvg = avg(segRows.map((row) => row.mobile_rate));
         const pcAvg = avg(segRows.map((row) => row.pc_rate));
         const authAvg = avg(segRows.map((row) => row.auth_rate));
         return `<div class="weekly-card ${cardCls}">
-          <div class="weekly-seg">${seg}</div>
+          <div class="weekly-seg">${SEGMENT_LABELS[seg] || seg}</div>
           <div class="weekly-kpi">个微在线均值：<span class="kpi-value${kpiClass(gweiAvg)}">${pct(gweiAvg)}</span></div>
           <div class="weekly-kpi">手机端在线均值：<span class="kpi-value${kpiClass(mobileAvg)}">${pct(mobileAvg)}</span></div>
           <div class="weekly-kpi">电脑端在线均值：<span class="kpi-value${kpiClass(pcAvg)}">${pct(pcAvg)}</span></div>

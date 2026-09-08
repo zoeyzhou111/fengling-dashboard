@@ -37,6 +37,14 @@ SEGMENT_KEYS = {
     "小短": "xiaoduan",
     "高短": "gaoduan",
 }
+SEGMENT_DISPLAY_NAMES = {
+    "郑州特战队": "郑州特战团",
+    "小短": "小短（小学）",
+}
+
+
+def display_segment(segment: str) -> str:
+    return SEGMENT_DISPLAY_NAMES.get(segment, segment)
 XINGHUO_TEAM_ALLOWLIST = {"星火先锋-秦智豪"}
 TEAM_GRADE_OVERRIDE = {
     "溯川向上-刘炎鹤": "高二",

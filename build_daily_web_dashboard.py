@@ -14,6 +14,8 @@ from generate_daily_reports import (
     SEGMENTS,
     SEGMENT_GROUPS,
     SEGMENT_KEYS,
+    SEGMENT_DISPLAY_NAMES,
+    display_segment,
     expand_with_summary,
     norm_school,
     normalize_sales_export,
@@ -1183,7 +1185,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
     week_options = available_week_starts(history_df, today)
     default_week = week_start_for(today).isoformat()
     build_stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-    seg_headers = "".join([f"<th colspan='3'>{seg}</th>" for seg in segments])
+    seg_headers = "".join([f"<th colspan='3'>{display_segment(seg)}</th>" for seg in segments])
     sub_headers = "".join(["<th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th>" for _ in segments])
     return f"""
 <!doctype html>
@@ -1241,6 +1243,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
     const DEFAULT_WEEK = {json.dumps(default_week, ensure_ascii=False)};
     const SEGMENTS = {json.dumps(segments, ensure_ascii=False)};
     const SEGMENT_KEYS = {json.dumps(SEGMENT_KEYS, ensure_ascii=False)};
+    const SEGMENT_LABELS = {json.dumps({seg: display_segment(seg) for seg in segments}, ensure_ascii=False)};
     const SEG_COLORS = {json.dumps({"初短一部": "#ef4444", "初短二部": "#8b5cf6", "初短三部": "#0891b2", "郑州特战队": "#e11d48", "小短": "#22c55e", "高短": "#f59e0b"}, ensure_ascii=False)};
     const TODAY_WEEK = {json.dumps(default_week, ensure_ascii=False)};
 
@@ -1314,7 +1317,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
         const numMap = Object.fromEntries(segRows.map((row) => [row.date, row[numKey]]));
         const denMap = Object.fromEntries(segRows.map((row) => [row.date, row[denKey]]));
         return {{
-          label: seg,
+          label: SEGMENT_LABELS[seg] || seg,
           data: labels.map((d) => {{
             const val = rateMap[d];
             return val === null || val === undefined ? 0 : Math.round(val * 10000) / 100;
@@ -1334,14 +1337,14 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
         const segRows = rows.filter((row) => row.segment === seg);
         const cardCls = "weekly-" + (SEGMENT_KEYS[seg] || "");
         if (!segRows.length) {{
-          return `<div class="weekly-card ${{cardCls}}"><div class="weekly-seg">${{seg}}</div><div class="weekly-kpi">该周暂无数据</div></div>`;
+          return `<div class="weekly-card ${{cardCls}}"><div class="weekly-seg">${{SEGMENT_LABELS[seg] || seg}}</div><div class="weekly-kpi">该周暂无数据</div></div>`;
         }}
         const gweiAvg = avg(segRows.map((row) => row.gwei_rate));
         const mobileAvg = avg(segRows.map((row) => row.mobile_rate));
         const pcAvg = avg(segRows.map((row) => row.pc_rate));
         const authAvg = avg(segRows.map((row) => row.auth_rate));
         return `<div class="weekly-card ${{cardCls}}">
-          <div class="weekly-seg">${{seg}}</div>
+          <div class="weekly-seg">${{SEGMENT_LABELS[seg] || seg}}</div>
           <div class="weekly-kpi">个微在线均值：<span class="kpi-value${{kpiClass(gweiAvg)}}">${{pct(gweiAvg)}}</span></div>
           <div class="weekly-kpi">手机端在线均值：<span class="kpi-value${{kpiClass(mobileAvg)}}">${{pct(mobileAvg)}}</span></div>
           <div class="weekly-kpi">电脑端在线均值：<span class="kpi-value${{kpiClass(pcAvg)}}">${{pct(pcAvg)}}</span></div>
@@ -1469,6 +1472,25 @@ def write_weekly_dashboard(history_df: pd.DataFrame, date_text: str) -> None:
     )
 
 
+def build_redirect_page(target: str, title: str) -> str:
+    safe_target = escape(target)
+    return f"""
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{escape(title)}</title>
+  <meta http-equiv="refresh" content="0; url={safe_target}" />
+  <script>window.location.replace("{safe_target}");</script>
+</head>
+<body>
+  <p>正在跳转：<a href="{safe_target}">{escape(title)}</a></p>
+</body>
+</html>
+"""
+
+
 def build_daily_hub_page(date_text: str) -> str:
     return f"""
 <!doctype html>
@@ -1565,7 +1587,7 @@ def build_daily_dashboard_page(
         segment_html.append(
             f"""
 <section class="segment-block {seg_cls}">
-  <h2 class="segment-name">{segment}</h2>
+  <h2 class="segment-name">{display_segment(segment)}</h2>
   <div class="cards">
     <a class="card-link card-auth" href="每日三表汇总看板_详情/{key}_auth.html">
       <div class="card-label">个微授权汇总率</div>
@@ -1598,7 +1620,6 @@ def build_daily_dashboard_page(
 </head>
 <body>
   <div class="page">
-    <a class="nav-link" href="{back_href}">← 返回看板首页</a>
     <h1 class="dashboard-title">{title}</h1>
     <div class="weekly-inline-link-wrap">
       <a class="weekly-inline-link" href="{weekly_href}">每周维度在线率看板（点击进入）</a>
@@ -1891,14 +1912,15 @@ def main(as_of_date: str = "") -> None:
         key = SEGMENT_KEYS[segment]
         page_date_text = all_dates[-1] if all_dates else ""
 
+        seg_label = display_segment(segment)
         (DETAIL_DIR / f"{key}_auth.html").write_text(
-            auth_table_html(auth, f"{segment}-个微授权明细", page_date_text, key), encoding="utf-8"
+            auth_table_html(auth, f"{seg_label}-个微授权明细", page_date_text, key), encoding="utf-8"
         )
         (DETAIL_DIR / f"{key}_sales.html").write_text(
-            sales_table_html(sales, f"{segment}-企微在线明细", page_date_text, key), encoding="utf-8"
+            sales_table_html(sales, f"{seg_label}-企微在线明细", page_date_text, key), encoding="utf-8"
         )
         (DETAIL_DIR / f"{key}_bad.html").write_text(
-            bad_table_html(bad, f"{segment}-未达标名单", page_date_text, key), encoding="utf-8"
+            bad_table_html(bad, f"{seg_label}-未达标名单", page_date_text, key), encoding="utf-8"
         )
 
         auth_detail = fill_group_cols(auth[["学部", "年级", "战队", "低价课带班", "全天在线", "个微全天在线率", "接流", "授权人数", "正常人数", "爱芯个微授权率", "个微功能正常率"]].copy(), ["学部", "年级"])
@@ -1931,37 +1953,40 @@ def main(as_of_date: str = "") -> None:
             sales_team = sales_detail[sales_detail["战队"].astype(str).str.strip().eq(team)].copy()
             roster_team = roster[roster["战队"].astype(str).str.strip().eq(team)].copy()
             (TEAM_DETAIL_DIR / team_page_name(key, team)).write_text(
-                team_detail_html(segment, team, page_date_text, auth_team, sales_team, roster_team, key),
+                team_detail_html(seg_label, team, page_date_text, auth_team, sales_team, roster_team, key),
                 encoding="utf-8",
             )
 
     date_text = max(all_dates) if all_dates else ""
     if as_of_date:
         date_text = as_of_date
-    DAILY_HUB_HTML.write_text(build_daily_hub_page(date_text), encoding="utf-8")
+    unified_page = build_daily_dashboard_page(
+        summary_rows,
+        date_text,
+        SEGMENTS,
+        title="每日三表汇总看板（郑州）",
+        weekly_href="周维度在线率看板.html",
+    )
+    DAILY_HUB_HTML.write_text(unified_page, encoding="utf-8")
     DAILY_CHUDUAN_HTML.write_text(
-        build_daily_dashboard_page(
-            summary_rows,
-            date_text,
-            SEGMENT_GROUPS["初中"],
-            title="每日三表汇总看板（初中）",
-            weekly_href="周维度在线率看板.html",
-        ),
+        build_redirect_page("每日三表汇总看板.html", "每日三表汇总看板"),
         encoding="utf-8",
     )
     DAILY_GAODUAN_HTML.write_text(
-        build_daily_dashboard_page(
-            summary_rows,
-            date_text,
-            SEGMENT_GROUPS["高中"],
-            title="每日三表汇总看板（高中）",
-            weekly_href="周维度在线率看板.html",
-        ),
+        build_redirect_page("每日三表汇总看板.html", "每日三表汇总看板"),
         encoding="utf-8",
     )
     VISIT_STATS_HTML.write_text(build_visit_stats_page(), encoding="utf-8")
     history_df = update_history(parse_date_text(date_text) if date_text else date.today(), summary_rows)
     write_weekly_dashboard(history_df, date_text)
+    WEEKLY_CHUDUAN_HTML.write_text(
+        build_redirect_page("周维度在线率看板.html", "周维度在线率看板"),
+        encoding="utf-8",
+    )
+    WEEKLY_GAODUAN_HTML.write_text(
+        build_redirect_page("周维度在线率看板.html", "周维度在线率看板"),
+        encoding="utf-8",
+    )
     print(f"Generated: {DAILY_HUB_HTML}")
     print(f"Generated: {DAILY_CHUDUAN_HTML}")
     print(f"Generated: {DAILY_GAODUAN_HTML}")
