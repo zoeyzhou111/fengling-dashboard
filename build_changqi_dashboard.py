@@ -173,21 +173,26 @@ def is_non_compliant(app_rate: Optional[float], pc_rate: Optional[float]) -> boo
     return not (is_rate_compliant(app_rate) and is_rate_compliant(pc_rate))
 
 
-def format_offline_slot(value) -> Tuple[str, str]:
+def has_offline_slot(value) -> bool:
+    text = "" if pd.isna(value) else str(value).strip()
+    return bool(text) and text != ":-:"
+
+
+def has_any_offline_slot(app_slot, pc_slot) -> bool:
+    return has_offline_slot(app_slot) or has_offline_slot(pc_slot)
+
+
+def format_offline_slot_display(value) -> str:
     text = "" if pd.isna(value) else str(value).strip()
     if not text or text == ":-:":
-        return "-", ""
-    safe = escape(text)
-    if len(text) <= 40:
-        return safe, safe
-    short = escape(text[:37]) + "..."
-    return short, safe
+        return "-"
+    return escape(text).replace(",", ",<br>")
 
 
 def detail_page_styles() -> str:
     return """
 body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f7f8fc; color: #111827; }
-.page { max-width: 980px; margin: 0 auto; }
+.page { max-width: 1100px; margin: 0 auto; }
 .nav-link { display: inline-block; margin-bottom: 12px; color: #1d4ed8; text-decoration: none; font-weight: 700; }
 .main-title { text-align: center; color: #7e22ce; font-size: 28px; margin: 0 0 16px; }
 .dashboard-sub { text-align: center; color: #64748b; margin-bottom: 16px; }
@@ -195,11 +200,12 @@ body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont,
 .segment-name { margin: 0 0 10px; font-size: 22px; color: #0f172a; }
 .section-title { margin: 14px 0 8px; font-size: 18px; color: #334155; }
 .table-wrap { overflow-x: auto; }
-.detail-table { width: max-content; max-width: 100%; border-collapse: collapse; background: #fff; table-layout: fixed; }
-.detail-table th, .detail-table td { border: 2px solid #111827; padding: 6px 8px; text-align: center; font-size: 16px; line-height: 1.3; white-space: nowrap; }
-.detail-table thead th { background: #0c6cb3; color: #fff; font-weight: 800; }
-.detail-table .col-name { text-align: center; }
-.detail-table .col-slot { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.detail-table { width: 100%; border-collapse: collapse; background: #fff; table-layout: fixed; }
+.detail-table th, .detail-table td { border: 2px solid #111827; padding: 6px 8px; text-align: center; font-size: 16px; line-height: 1.35; }
+.detail-table thead th { background: #0c6cb3; color: #fff; font-weight: 800; white-space: nowrap; }
+.detail-table .col-name { text-align: center; white-space: nowrap; }
+.detail-table .col-slot { text-align: left; white-space: normal; word-break: break-word; font-size: 14px; vertical-align: top; }
+.detail-table .col-rate { white-space: nowrap; }
 .rate-yellow { background: linear-gradient(90deg, #fde89f 0%, #fff9ea 100%); font-weight: 800; }
 .rate-low { color: #b91c1c !important; background: #fee2e2 !important; font-weight: 800; }
 """
@@ -328,10 +334,15 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
     if day_df.empty:
         return "<p class='dashboard-sub'>暂无明细数据</p>"
 
-    day_df = day_df[day_df.apply(lambda r: is_non_compliant(r["app_rate"], r["pc_rate"]), axis=1)].copy()
+    day_df = day_df[
+        day_df.apply(
+            lambda r: has_any_offline_slot(r.get("app不在线时间段"), r.get("pc不在线时间段")),
+            axis=1,
+        )
+    ].copy()
     if day_df.empty:
-        body = "<p class='dashboard-sub'>当日全部达标，暂无未达标明细。</p>"
-        title = f"长期班风灵未达标明细（{latest_date}）"
+        body = "<p class='dashboard-sub'>当日无不在线时段记录。</p>"
+        title = f"长期班不在线时段明细（{latest_date}）"
         return f"""
 <!doctype html>
 <html lang="zh-CN">
@@ -367,15 +378,16 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
             rows = []
             seq = 0
             for row in sdf.itertuples(index=False):
-                if not is_non_compliant(row.app_rate, row.pc_rate):
+                if not has_any_offline_slot(
+                    getattr(row, "app不在线时间段", ""),
+                    getattr(row, "pc不在线时间段", ""),
+                ):
                     continue
                 seq += 1
-                app_cls = "rate-yellow" + (" rate-low" if not is_rate_compliant(row.app_rate) else "")
-                pc_cls = "rate-yellow" + (" rate-low" if not is_rate_compliant(row.pc_rate) else "")
-                app_slot, app_slot_title = format_offline_slot(getattr(row, "app不在线时间段", ""))
-                pc_slot, pc_slot_title = format_offline_slot(getattr(row, "pc不在线时间段", ""))
-                app_title = f' title="{app_slot_title}"' if app_slot_title else ""
-                pc_title = f' title="{pc_slot_title}"' if pc_slot_title else ""
+                app_cls = "col-rate rate-yellow" + (" rate-low" if not is_rate_compliant(row.app_rate) else "")
+                pc_cls = "col-rate rate-yellow" + (" rate-low" if not is_rate_compliant(row.pc_rate) else "")
+                app_slot = format_offline_slot_display(getattr(row, "app不在线时间段", ""))
+                pc_slot = format_offline_slot_display(getattr(row, "pc不在线时间段", ""))
                 rows.append(
                     "<tr>"
                     f"<td>{seq}</td>"
@@ -383,8 +395,8 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
                     f'<td class="col-name">{escape(str(row.姓名))}</td>'
                     f'<td class="{app_cls}">{pct_text(row.app_rate)}</td>'
                     f'<td class="{pc_cls}">{pct_text(row.pc_rate)}</td>'
-                    f'<td class="col-slot"{app_title}>{app_slot}</td>'
-                    f'<td class="col-slot"{pc_title}>{pc_slot}</td>'
+                    f'<td class="col-slot">{app_slot}</td>'
+                    f'<td class="col-slot">{pc_slot}</td>'
                     "</tr>"
                 )
             if not rows:
@@ -399,10 +411,10 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
         <th style="width:52px">序号</th>
         <th style="width:64px">年级</th>
         <th style="width:88px">姓名</th>
-        <th style="width:118px">风灵app在线率</th>
-        <th style="width:118px">风灵pc在线率</th>
-        <th style="width:132px">app不在线时段</th>
-        <th style="width:132px">pc不在线时段</th>
+        <th style="width:10%">风灵app在线率</th>
+        <th style="width:10%">风灵pc在线率</th>
+        <th style="width:28%">app不在线时段</th>
+        <th style="width:28%">pc不在线时段</th>
       </tr>
     </thead>
     <tbody>{''.join(rows)}</tbody>
@@ -414,13 +426,13 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
             sections.append(
                 f"""
 <section class="segment-block {style_cls} detail-block" style="border-left:8px solid {border_color}">
-  <h2 class="segment-name">{escape(xuebu)}（未达标 {len(xdf)} 人）</h2>
+  <h2 class="segment-name">{escape(xuebu)}（不在线 {len(xdf)} 人）</h2>
   {''.join(subject_sections)}
 </section>
 """
             )
 
-    title = f"长期班风灵未达标明细（{latest_date}）"
+    title = f"长期班不在线时段明细（{latest_date}）"
     return f"""
 <!doctype html>
 <html lang="zh-CN">
@@ -470,7 +482,7 @@ def build_main_page(history: pd.DataFrame, latest_date: str) -> str:
     <h1 class="dashboard-title">{title}</h1>
     <div class="dashboard-sub">最新数据日期：{escape(latest_date or '暂无')}｜页面版本：{build_stamp}</div>
     <div class="weekly-inline-link-wrap">
-      <a class="weekly-inline-link" href="长期班风灵在线看板_详情/detail.html">风灵未达标明细（点击进入）</a>
+      <a class="weekly-inline-link" href="长期班风灵在线看板_详情/detail.html">不在线时段明细（点击进入）</a>
     </div>
     {build_pivot_sections(history, dates)}
   </div>
