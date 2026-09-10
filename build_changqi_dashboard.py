@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 from datetime import datetime
 from html import escape
 from pathlib import Path
@@ -21,6 +20,11 @@ CHANGQI_DETAIL_CSV = ROOT / "changqi_detail_history.csv"
 SUBJECT_ORDER = ["英语", "语文", "数学", "物理", "化学"]
 XUEBU_ORDER = ["初中", "高中", "小学"]
 MAX_DATE_COLUMNS = 14
+XUEBU_STYLES = {
+    "初中": ("segment-chuduan", "#3b82f6"),
+    "高中": ("segment-gaoduan", "#f97316"),
+    "小学": ("segment-xiaoduan", "#22c55e"),
+}
 
 
 def find_latest_source(downloads_dir: Path) -> Optional[Path]:
@@ -145,6 +149,12 @@ def rate_class(value: Optional[float]) -> str:
     return ""
 
 
+def is_non_compliant(app_rate: Optional[float], pc_rate: Optional[float]) -> bool:
+    app_ok = pd.notna(app_rate) and float(app_rate) >= 1
+    pc_ok = pd.notna(pc_rate) and float(pc_rate) >= 1
+    return not (app_ok and pc_ok)
+
+
 def subject_sort_key(subject: str) -> Tuple[int, str]:
     if subject.endswith("汇总"):
         return (99, subject)
@@ -179,11 +189,12 @@ def lookup_rate(
     return float(val) if pd.notna(val) else None
 
 
-def build_pivot_table(history: pd.DataFrame, dates: List[str]) -> str:
-    if history.empty or not dates:
-        return '<p class="dashboard-sub">暂无历史数据</p>'
+def build_pivot_table_for_xuebu(history: pd.DataFrame, dates: List[str], xuebu: str) -> str:
+    part = history[history["学部"] == xuebu].copy()
+    if part.empty or not dates:
+        return f'<p class="dashboard-sub">{escape(xuebu)}暂无历史数据</p>'
 
-    centers = sorted(history["运营中心"].dropna().unique())
+    centers = sorted(part["运营中心"].dropna().unique())
     date_headers = []
     sub_headers = []
     for dt in dates:
@@ -193,41 +204,32 @@ def build_pivot_table(history: pd.DataFrame, dates: List[str]) -> str:
 
     body_rows: List[str] = []
     for oc in centers:
+        subjects = sorted(
+            {
+                s
+                for s in part.loc[part["运营中心"] == oc, "学科"].astype(str)
+                if not str(s).endswith("汇总")
+            },
+            key=subject_sort_key,
+        )
+        subjects.append(f"{xuebu} 汇总")
         oc_rows: List[str] = []
-        xuebus = [x for x in XUEBU_ORDER if x in set(history.loc[history["运营中心"] == oc, "学部"])]
-        extra = sorted(set(history.loc[history["运营中心"] == oc, "学部"]) - set(xuebus))
-        xuebus.extend(extra)
-
-        for xuebu in xuebus:
-            subjects = sorted(
-                {
-                    s
-                    for s in history.loc[
-                        (history["运营中心"] == oc) & (history["学部"] == xuebu), "学科"
-                    ].astype(str)
-                    if not str(s).endswith("汇总")
-                },
-                key=subject_sort_key,
-            )
-            subjects.append(f"{xuebu} 汇总")
-            for idx, subject in enumerate(subjects):
-                cells = []
-                if idx == 0:
-                    cells.append(f'<td rowspan="{len(subjects)}" class="left-group">{escape(xuebu)}</td>')
-                cls = "summary-row" if subject.endswith("汇总") else ""
-                cells.append(f'<td class="{cls}">{escape(subject)}</td>')
-                for dt in dates:
-                    app = lookup_rate(history, dt, oc, xuebu, subject, "app_rate")
-                    pc = lookup_rate(history, dt, oc, xuebu, subject, "pc_rate")
-                    cells.append(
-                        f'<td class="rate-blue{rate_class(app)}">{pct_text(app)}</td>'
-                        f'<td class="rate-blue{rate_class(pc)}">{pct_text(pc)}</td>'
-                    )
-                oc_rows.append("<tr>" + "".join(cells) + "</tr>")
-
-        if not oc_rows:
-            continue
-        oc_rows[0] = oc_rows[0].replace("<tr>", f'<tr><td rowspan="{len(oc_rows)}" class="left-group">{escape(oc)}</td>', 1)
+        for idx, subject in enumerate(subjects):
+            cls = "summary-row" if subject.endswith("汇总") else ""
+            cells = [f'<td class="{cls}">{escape(subject)}</td>']
+            for dt in dates:
+                app = lookup_rate(part, dt, oc, xuebu, subject, "app_rate")
+                pc = lookup_rate(part, dt, oc, xuebu, subject, "pc_rate")
+                cells.append(
+                    f'<td class="rate-blue{rate_class(app)}">{pct_text(app)}</td>'
+                    f'<td class="rate-blue{rate_class(pc)}">{pct_text(pc)}</td>'
+                )
+            oc_rows.append("<tr>" + "".join(cells) + "</tr>")
+        oc_rows[0] = oc_rows[0].replace(
+            "<tr>",
+            f'<tr><td rowspan="{len(oc_rows)}" class="left-group">{escape(oc)}</td>',
+            1,
+        )
         body_rows.extend(oc_rows)
 
     return f"""
@@ -235,7 +237,6 @@ def build_pivot_table(history: pd.DataFrame, dates: List[str]) -> str:
   <thead>
     <tr>
       <th rowspan="2">运营中心</th>
-      <th rowspan="2">学部</th>
       <th rowspan="2">学科</th>
       {''.join(date_headers)}
     </tr>
@@ -248,17 +249,67 @@ def build_pivot_table(history: pd.DataFrame, dates: List[str]) -> str:
 """
 
 
+def build_pivot_sections(history: pd.DataFrame, dates: List[str]) -> str:
+    if history.empty or not dates:
+        return '<p class="dashboard-sub">暂无历史数据</p>'
+
+    sections: List[str] = []
+    for xuebu in XUEBU_ORDER:
+        if xuebu not in set(history["学部"].astype(str)):
+            continue
+        style_cls, border_color = XUEBU_STYLES.get(xuebu, ("segment-block", "#6d28d9"))
+        sections.append(
+            f"""
+<section class="segment-block {style_cls}" style="border-left:8px solid {border_color}">
+  <h2 class="segment-name">{escape(xuebu)}</h2>
+  {build_pivot_table_for_xuebu(history, dates, xuebu)}
+</section>
+"""
+        )
+    return "".join(sections) if sections else '<p class="dashboard-sub">暂无历史数据</p>'
+
+
 def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
     day_df = detail[detail["日期"] == latest_date].copy()
     if day_df.empty:
         return "<p class='dashboard-sub'>暂无明细数据</p>"
 
+    day_df = day_df[day_df.apply(lambda r: is_non_compliant(r["app_rate"], r["pc_rate"]), axis=1)].copy()
+    if day_df.empty:
+        body = "<p class='dashboard-sub'>当日全部达标，暂无未达标明细。</p>"
+        title = f"长期班风灵未达标明细（{latest_date}）"
+        return f"""
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <style>
+{base_styles(scale=0.55)}
+  </style>
+  {analytics_head_html(title)}
+</head>
+<body>
+  <div class="page">
+    <a class="nav-link" href="../长期班风灵在线看板.html">← 返回长期班看板</a>
+    <h1 class="main-title">{title}</h1>
+    {body}
+  </div>
+</body>
+</html>
+"""
+
     sections: List[str] = []
     for xuebu in [x for x in XUEBU_ORDER if x in set(day_df["学部"])]:
         xdf = day_df[day_df["学部"] == xuebu]
+        style_cls, border_color = XUEBU_STYLES.get(xuebu, ("segment-block", "#6d28d9"))
+        subject_sections: List[str] = []
         subjects = sorted(xdf["学科"].unique(), key=subject_sort_key)
         for subject in subjects:
             sdf = xdf[xdf["学科"] == subject].sort_values(["年级", "姓名"])
+            if sdf.empty:
+                continue
             rows = []
             for i, row in enumerate(sdf.itertuples(index=False), 1):
                 app_cls = rate_class(row.app_rate)
@@ -274,10 +325,9 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
                     f"<td>{escape(str(getattr(row, 'pc不在线时间段', '') or ''))}</td>"
                     "</tr>"
                 )
-            sections.append(
+            subject_sections.append(
                 f"""
-<section class="detail-block">
-  <h2 class="section-title">{escape(xuebu)} · {escape(subject)}</h2>
+  <h3 class="section-title">{escape(subject)}</h3>
   <table class="sheet-table mini-table">
     <thead>
       <tr>
@@ -288,11 +338,19 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
     </thead>
     <tbody>{''.join(rows)}</tbody>
   </table>
+"""
+            )
+        if subject_sections:
+            sections.append(
+                f"""
+<section class="segment-block {style_cls} detail-block" style="border-left:8px solid {border_color}">
+  <h2 class="segment-name">{escape(xuebu)}（未达标 {len(xdf)} 人）</h2>
+  {''.join(subject_sections)}
 </section>
 """
             )
 
-    title = f"长期班风灵在线明细（{latest_date}）"
+    title = f"长期班风灵未达标明细（{latest_date}）"
     return f"""
 <!doctype html>
 <html lang="zh-CN">
@@ -332,7 +390,11 @@ def build_main_page(history: pd.DataFrame, latest_date: str) -> str:
   <style>
 {base_styles(scale=0.7)}
 .changqi-table th, .changqi-table td {{ font-size: 24px; }}
-.changqi-entry {{ background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%); border-left: 8px solid #f59e0b; }}
+.segment-block {{ margin-bottom: 18px; }}
+.segment-chuduan {{ background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); }}
+.segment-gaoduan {{ background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); }}
+.segment-xiaoduan {{ background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); }}
+.segment-name {{ margin: 0 0 12px; font-size: 28px; color: #0f172a; }}
   </style>
   {analytics_head_html(title)}
 </head>
@@ -342,9 +404,9 @@ def build_main_page(history: pd.DataFrame, latest_date: str) -> str:
     <h1 class="dashboard-title">{title}</h1>
     <div class="dashboard-sub">最新数据日期：{escape(latest_date or '暂无')}｜页面版本：{build_stamp}</div>
     <div class="weekly-inline-link-wrap">
-      <a class="weekly-inline-link" href="长期班风灵在线看板_详情/detail.html">学习管理师在线明细（点击进入）</a>
+      <a class="weekly-inline-link" href="长期班风灵在线看板_详情/detail.html">风灵未达标明细（点击进入）</a>
     </div>
-    {build_pivot_table(history, dates)}
+    {build_pivot_sections(history, dates)}
   </div>
 </body>
 </html>
