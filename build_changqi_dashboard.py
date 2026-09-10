@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
+import json
+from datetime import date, datetime, timedelta
 from html import escape
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -13,6 +14,7 @@ from build_daily_web_dashboard import analytics_head_html, base_styles
 
 ROOT = Path(__file__).resolve().parent
 CHANGQI_HTML = ROOT / "长期班风灵在线看板.html"
+CHANGQI_WEEKLY_HTML = ROOT / "长期班周维度在线率看板.html"
 CHANGQI_DETAIL_DIR = ROOT / "长期班风灵在线看板_详情"
 CHANGQI_HISTORY_CSV = ROOT / "changqi_history.csv"
 CHANGQI_DETAIL_CSV = ROOT / "changqi_detail_history.csv"
@@ -27,6 +29,7 @@ XUEBU_STYLES = {
     "高中": ("segment-gaoduan", "#f97316"),
     "小学": ("segment-xiaoduan", "#22c55e"),
 }
+CHANGQI_WEEKDAY_NAMES = ["周四", "周五", "周六", "周日", "周一"]
 
 
 def find_latest_source(downloads_dir: Path) -> Optional[Path]:
@@ -265,7 +268,10 @@ body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont,
 """
 
 
-def subject_sort_key(subject: str) -> Tuple[int, str]:
+def subject_sort_key(subject) -> Tuple[int, str]:
+    subject = str(subject).strip() if pd.notna(subject) else UNKNOWN_SUBJECT
+    if subject in ("", "nan"):
+        subject = UNKNOWN_SUBJECT
     if subject.endswith("汇总"):
         return (99, subject)
     if subject == UNKNOWN_SUBJECT:
@@ -287,6 +293,53 @@ def display_subjects(history: pd.DataFrame, oc: str, xuebu: str) -> List[str]:
 def latest_dates(history: pd.DataFrame, limit: int = MAX_DATE_COLUMNS) -> List[str]:
     dates = sorted(history["日期"].dropna().unique(), reverse=True)
     return dates[:limit]
+
+
+def changqi_week_start(d: date) -> date:
+    return d - timedelta(days=(d.weekday() - 3) % 7)
+
+
+def changqi_week_days(week_start: date) -> List[str]:
+    return [(week_start + timedelta(days=i)).isoformat() for i in range(5)]
+
+
+def is_changqi_report_day(d: date) -> bool:
+    return d.weekday() in (0, 3, 4, 5, 6)
+
+
+def filter_weekly_history(history: pd.DataFrame) -> pd.DataFrame:
+    if history.empty:
+        return history.copy()
+    df = history.copy()
+    dt = pd.to_datetime(df["日期"], errors="coerce")
+    mask = dt.apply(lambda value: is_changqi_report_day(value.date()) if pd.notna(value) else False)
+    return df.loc[mask].copy()
+
+
+def prepare_changqi_history_records(history: pd.DataFrame) -> List[dict]:
+    records: List[dict] = []
+    for _, row in history.iterrows():
+        records.append(
+            {
+                "date": str(row["日期"]),
+                "oc": str(row["运营中心"]),
+                "xuebu": str(row["学部"]),
+                "subject": str(row["学科"]),
+                "app_rate": float(row["app_rate"]) if pd.notna(row.get("app_rate")) else None,
+                "pc_rate": float(row["pc_rate"]) if pd.notna(row.get("pc_rate")) else None,
+            }
+        )
+    return records
+
+
+def available_changqi_week_starts(history: pd.DataFrame, today: date) -> List[str]:
+    weekly = filter_weekly_history(history)
+    if weekly.empty:
+        return [changqi_week_start(today).isoformat()]
+    dt = pd.to_datetime(weekly["日期"], errors="coerce").dropna()
+    week_starts = {changqi_week_start(value.date()).isoformat() for value in dt}
+    week_starts.add(changqi_week_start(today).isoformat())
+    return sorted(week_starts, reverse=True)
 
 
 def lookup_rate(
@@ -423,7 +476,13 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
         style_cls, border_color = XUEBU_STYLES.get(xuebu, ("segment-block", "#6d28d9"))
         subject_sections: List[str] = []
         xdf = xdf.copy()
-        xdf["展示学科"] = xdf["学科"].where(xdf["学科"].astype(str).str.strip().ne(""), UNKNOWN_SUBJECT)
+        xdf["展示学科"] = (
+            xdf["学科"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+            .replace({"": UNKNOWN_SUBJECT, "nan": UNKNOWN_SUBJECT})
+        )
         subjects = sorted(xdf["展示学科"].unique(), key=subject_sort_key)
         for subject in subjects:
             sdf = xdf[xdf["展示学科"] == subject].sort_values(["年级", "姓名"])
@@ -508,6 +567,186 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
 """
 
 
+def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
+    weekly_history = filter_weekly_history(history)
+    today = datetime.strptime(latest_date, "%Y-%m-%d").date() if latest_date else date.today()
+    week_options = available_changqi_week_starts(weekly_history, today)
+    default_week = changqi_week_start(today).isoformat()
+    history_records = prepare_changqi_history_records(weekly_history)
+    build_stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    title = "长期班周维度在线率看板（郑州）"
+    return f"""
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <style>
+{base_styles(scale=0.7)}
+.changqi-table th, .changqi-table td {{ font-size: 22px; }}
+.segment-block {{ margin-bottom: 18px; }}
+.segment-chuduan {{ background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); }}
+.segment-gaoduan {{ background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); }}
+.segment-xiaoduan {{ background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); }}
+.segment-name {{ margin: 0 0 12px; font-size: 28px; color: #0f172a; }}
+.weekly-query-bar {{ display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; }}
+.weekly-query-bar label {{ font-size: 16px; font-weight: 700; color: #334155; }}
+.weekly-query-bar select {{ min-width: 320px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; }}
+.weekly-query-btn {{ font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }}
+  </style>
+  {analytics_head_html(title)}
+</head>
+<body>
+  <div class="page">
+    <a class="nav-link" href="长期班风灵在线看板.html">← 返回长期班每日看板</a>
+    <h1 class="dashboard-title">{title}</h1>
+    <div class="weekly-query-bar">
+      <label for="weekSelect">历史周查询（周四至周一）</label>
+      <select id="weekSelect" aria-label="选择历史周"></select>
+      <button type="button" class="weekly-query-btn" id="prevWeekBtn">上一周</button>
+      <button type="button" class="weekly-query-btn" id="nextWeekBtn">下一周</button>
+    </div>
+    <div class="dashboard-sub" id="weekSubtitle"></div>
+    <div class="dashboard-sub">页面版本：{build_stamp}｜不含周二、周三</div>
+    <div id="weeklySections"></div>
+  </div>
+  <script>
+    const HISTORY = {json.dumps(history_records, ensure_ascii=False)};
+    const WEEK_OPTIONS = {json.dumps(week_options, ensure_ascii=False)};
+    const DEFAULT_WEEK = {json.dumps(default_week, ensure_ascii=False)};
+    const TODAY_WEEK = {json.dumps(default_week, ensure_ascii=False)};
+    const XUEBU_ORDER = {json.dumps(XUEBU_ORDER, ensure_ascii=False)};
+    const SUBJECT_ORDER = {json.dumps(SUBJECT_ORDER, ensure_ascii=False)};
+    const WEEKDAY_NAMES = {json.dumps(CHANGQI_WEEKDAY_NAMES, ensure_ascii=False)};
+
+    const weekSelect = document.getElementById("weekSelect");
+    const prevWeekBtn = document.getElementById("prevWeekBtn");
+    const nextWeekBtn = document.getElementById("nextWeekBtn");
+    const weeklySections = document.getElementById("weeklySections");
+
+    function addDays(iso, days) {{
+      const parts = iso.split("-").map(Number);
+      const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+      dt.setDate(dt.getDate() + days);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const d = String(dt.getDate()).padStart(2, "0");
+      return `${{y}}-${{m}}-${{d}}`;
+    }}
+
+    function weekDays(weekStart) {{
+      return Array.from({{ length: 5 }}, (_, i) => addDays(weekStart, i));
+    }}
+
+    function weekLabel(weekStart) {{
+      const days = weekDays(weekStart);
+      let suffix = "";
+      if (weekStart === TODAY_WEEK) suffix = "（本周）";
+      else if (weekStart === addDays(TODAY_WEEK, -7)) suffix = "（上周）";
+      return `${{weekStart}} ~ ${{days[4]}}（周四至周一）${{suffix}}`;
+    }}
+
+    function pct(v) {{
+      if (v === null || v === undefined || Number.isNaN(v)) return "#N/A";
+      return (v * 100).toFixed(2) + "%";
+    }}
+
+    function rateClass(v) {{
+      if (v === null || v === undefined || Number.isNaN(v)) return "";
+      if (v < 0.5) return " rate-low";
+      if (v > 0.8) return " rate-high";
+      return "";
+    }}
+
+    function lookupRate(rows, dt, oc, xuebu, subject, metric) {{
+      const row = rows.find((item) => item.date === dt && item.oc === oc && item.xuebu === xuebu && item.subject === subject);
+      if (!row) return null;
+      return row[metric];
+    }}
+
+    function subjectsFor(rows, oc, xuebu) {{
+      const available = new Set(rows.filter((item) => item.oc === oc && item.xuebu === xuebu && !item.subject.endsWith("汇总")).map((item) => item.subject));
+      const subjects = SUBJECT_ORDER.filter((subject) => available.has(subject));
+      subjects.push(`${{xuebu}} 汇总`);
+      return subjects;
+    }}
+
+    function buildXuebuTable(rows, days, xuebu) {{
+      const ocs = [...new Set(rows.filter((item) => item.xuebu === xuebu).map((item) => item.oc))].sort();
+      if (!ocs.length) return "";
+      const dateHeaders = days.map((dt, idx) => `<th colspan="2">${{WEEKDAY_NAMES[idx]}}<br>${{dt.replaceAll("-", "/")}}</th>`).join("");
+      const subHeaders = days.map(() => "<th>风灵app在线率</th><th>风灵pc在线率</th>").join("");
+      const bodyRows = [];
+      for (const oc of ocs) {{
+        const subjects = subjectsFor(rows, oc, xuebu);
+        const ocRows = subjects.map((subject, idx) => {{
+          const cls = subject.endsWith("汇总") ? "summary-row" : "";
+          const cells = [`<td class="${{cls}}">${{subject}}</td>`];
+          for (const dt of days) {{
+            const app = lookupRate(rows, dt, oc, xuebu, subject, "app_rate");
+            const pc = lookupRate(rows, dt, oc, xuebu, subject, "pc_rate");
+            cells.push(`<td class="rate-blue${{rateClass(app)}}">${{pct(app)}}</td><td class="rate-blue${{rateClass(pc)}}">${{pct(pc)}}</td>`);
+          }}
+          const row = `<tr>${{cells.join("")}}</tr>`;
+          if (idx === 0) {{
+            return row.replace("<tr>", `<tr><td rowspan="${{subjects.length}}" class="left-group">${{oc}}</td>`);
+          }}
+          return row;
+        }});
+        bodyRows.push(...ocRows);
+      }}
+      const styleMap = {{ "初中": "segment-chuduan", "高中": "segment-gaoduan", "小学": "segment-xiaoduan" }};
+      const colorMap = {{ "初中": "#3b82f6", "高中": "#f97316", "小学": "#22c55e" }};
+      return `
+<section class="segment-block ${{styleMap[xuebu] || ""}}" style="border-left:8px solid ${{colorMap[xuebu] || "#6d28d9"}}">
+  <h2 class="segment-name">${{xuebu}}</h2>
+  <table class="sheet-table changqi-table">
+    <thead>
+      <tr><th rowspan="2">运营中心</th><th rowspan="2">学科</th>${{dateHeaders}}</tr>
+      <tr>${{subHeaders}}</tr>
+    </thead>
+    <tbody>${{bodyRows.join("")}}</tbody>
+  </table>
+</section>`;
+    }}
+
+    function renderWeek(weekStart) {{
+      const days = weekDays(weekStart);
+      const rows = HISTORY.filter((item) => days.includes(item.date));
+      document.getElementById("weekSubtitle").textContent = weekLabel(weekStart);
+      weeklySections.innerHTML = XUEBU_ORDER
+        .filter((xuebu) => rows.some((item) => item.xuebu === xuebu))
+        .map((xuebu) => buildXuebuTable(rows, days, xuebu))
+        .join("") || '<p class="dashboard-sub">该周暂无周四至周一数据</p>';
+      weekSelect.value = weekStart;
+      const idx = WEEK_OPTIONS.indexOf(weekStart);
+      prevWeekBtn.disabled = idx < 0 || idx >= WEEK_OPTIONS.length - 1;
+      nextWeekBtn.disabled = idx <= 0;
+      const url = new URL(window.location.href);
+      url.searchParams.set("week", weekStart);
+      window.history.replaceState(null, "", url.toString());
+    }}
+
+    weekSelect.innerHTML = WEEK_OPTIONS.map((weekStart) => `<option value="${{weekStart}}">${{weekLabel(weekStart)}}</option>`).join("");
+    weekSelect.addEventListener("change", () => renderWeek(weekSelect.value));
+    prevWeekBtn.addEventListener("click", () => {{
+      const idx = WEEK_OPTIONS.indexOf(weekSelect.value);
+      if (idx >= 0 && idx < WEEK_OPTIONS.length - 1) renderWeek(WEEK_OPTIONS[idx + 1]);
+    }});
+    nextWeekBtn.addEventListener("click", () => {{
+      const idx = WEEK_OPTIONS.indexOf(weekSelect.value);
+      if (idx > 0) renderWeek(WEEK_OPTIONS[idx - 1]);
+    }});
+    const params = new URLSearchParams(window.location.search);
+    const initialWeek = params.get("week");
+    renderWeek(WEEK_OPTIONS.includes(initialWeek) ? initialWeek : DEFAULT_WEEK);
+  </script>
+</body>
+</html>
+"""
+
+
 def build_main_page(history: pd.DataFrame, latest_date: str) -> str:
     dates = latest_dates(history)
     build_stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -536,6 +775,8 @@ def build_main_page(history: pd.DataFrame, latest_date: str) -> str:
     <h1 class="dashboard-title">{title}</h1>
     <div class="dashboard-sub">最新数据日期：{escape(latest_date or '暂无')}｜页面版本：{build_stamp}</div>
     <div class="weekly-inline-link-wrap">
+      <a class="weekly-inline-link" href="长期班周维度在线率看板.html">长期班周维度在线率看板（点击进入）</a>
+      <span class="weekly-inline-sep">｜</span>
       <a class="weekly-inline-link" href="长期班风灵在线看板_详情/detail.html">不在线时段明细（点击进入）</a>
     </div>
     {build_pivot_sections(history, dates)}
@@ -562,13 +803,15 @@ def main(source_path: str = "", downloads_dir: str = "") -> None:
     detail = merge_detail(detail_existing, raw)
     detail.to_csv(CHANGQI_DETAIL_CSV, index=False, encoding="utf-8-sig")
 
-    latest_date = sorted(raw["日期"].unique())[-1]
+    latest_date = sorted(history["日期"].unique())[-1]
     CHANGQI_DETAIL_DIR.mkdir(parents=True, exist_ok=True)
     (CHANGQI_DETAIL_DIR / "detail.html").write_text(build_detail_page(detail, latest_date), encoding="utf-8")
     CHANGQI_HTML.write_text(build_main_page(history, latest_date), encoding="utf-8")
+    CHANGQI_WEEKLY_HTML.write_text(build_weekly_page(history, latest_date), encoding="utf-8")
 
     print(f"Source: {src}")
     print(f"Generated: {CHANGQI_HTML}")
+    print(f"Generated: {CHANGQI_WEEKLY_HTML}")
     print(f"Generated: {CHANGQI_DETAIL_DIR / 'detail.html'}")
     print(f"History: {CHANGQI_HISTORY_CSV} ({len(history)} rows)")
     print(f"Latest date: {latest_date}, people: {len(raw[raw['日期'] == latest_date])}")

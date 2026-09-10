@@ -1,0 +1,262 @@
+
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>长期班周维度在线率看板（郑州）</title>
+  <style>
+
+* { box-sizing: border-box; }
+body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f7f8fc; color: #111827; }
+.page { max-width: 1700px; margin: 0 auto; zoom: 0.7; }
+.back-link { text-decoration: none; color: #1d4ed8; font-weight: 700; display: inline-block; margin-bottom: 10px; }
+.main-title { text-align: center; color: #7e22ce; font-size: 40px; margin: 0 0 12px; line-height: 1.2; }
+.sheet-table { width: 100%; border-collapse: collapse; background: #fff; }
+.sheet-table th, .sheet-table td { border: 2px solid #111827; padding: 6px 10px; text-align: center; font-size: 34px; line-height: 1.25; white-space: nowrap; }
+.sheet-table thead th { background: #0c6cb3; color: #fff; font-weight: 800; }
+.sheet-table .header-blue { background: #0c6cb3; color: #fff; }
+.sheet-table .header-orange { background: #f59e0b; color: #fff; }
+.left-group { background: #fbe7cf; font-weight: 800; }
+.summary-row { background: #d9e7f7; font-weight: 800; }
+.rate-blue { background: linear-gradient(90deg, #dbe5ff 0%, #f9fbff 100%); font-weight: 800; color: #111827; }
+.rate-yellow { background: linear-gradient(90deg, #fde89f 0%, #fff9ea 100%); font-weight: 800; }
+.rate-green { background: linear-gradient(90deg, #dcfce7 0%, #f8fff9 100%); font-weight: 800; color: #111827; }
+.rate-mint { background: linear-gradient(90deg, #b7f0df 0%, #f5fffb 100%); font-weight: 800; }
+.rate-low { color: #b91c1c !important; background-image: none !important; background-color: #fee2e2 !important; }
+.rate-high { color: #15803d !important; background-image: none !important; background-color: #dcfce7 !important; }
+.dashboard-title { text-align: center; color: #6d28d9; font-size: 34px; margin: 8px 0 18px; }
+.dashboard-sub { text-align: center; color: #6b7280; margin-bottom: 18px; font-size: 18px; }
+.weekly-inline-link-wrap { text-align: center; margin: -8px 0 18px; }
+.weekly-inline-link { font-size: 22px; font-weight: 700; color: #2563eb; text-decoration: none; border-bottom: 2px solid #bfdbfe; padding-bottom: 2px; }
+.weekly-inline-link:hover { color: #1d4ed8; border-bottom-color: #60a5fa; }
+.weekly-inline-sep { color: #94a3b8; font-size: 18px; margin: 0 4px; }
+.stats-card { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px 18px; margin: 14px 0; max-width: 720px; }
+.stats-card-title { margin: 0 0 10px; font-size: 22px; color: #0f172a; }
+.stats-num { font-size: 34px; font-weight: 800; color: #1d4ed8; }
+.stats-note { color: #64748b; font-size: 14px; margin-top: 10px; }
+.stats-link-list { margin: 0; padding-left: 20px; line-height: 2; }
+.stats-link { color: #1d4ed8; font-weight: 700; text-decoration: none; }
+.stats-link:hover { text-decoration: underline; }
+.segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
+.segment-chuduan3 { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #0891b2; }
+.segment-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 8px solid #e11d48; }
+.segment-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 8px solid #22c55e; }
+.segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
+.segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.card-link { text-decoration: none; color: inherit; display: block; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; padding: 12px; transition: .2s; min-height: 134px; }
+.card-link:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(15,23,42,0.09); border-color: #c7d2fe; }
+.card-auth { background: linear-gradient(135deg, #ecfeff 0%, #f8fafc 100%); border-left: 8px solid #06b6d4; }
+.card-online { background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-left: 8px solid #3b82f6; }
+.card-bad { background: linear-gradient(135deg, #fff1f2 0%, #f8fafc 100%); border-left: 8px solid #ef4444; }
+.card-label { color: #334155; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.card-value { color: #111827; font-size: 34px; font-weight: 800; line-height: 1.2; }
+.card-sub { color: #64748b; font-size: 15px; margin-top: 6px; min-height: 22px; }
+.team-link { color: inherit; text-decoration: none; font-weight: inherit; }
+.team-link:hover { text-decoration: underline; color: #1d4ed8; }
+.section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
+.mini-table th, .mini-table td { font-size: 28px; }
+.nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
+.weekly-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.hub-grid { display: grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap: 18px; max-width: 960px; margin: 24px auto; }
+.hub-card { display: block; text-decoration: none; color: inherit; border: 1px solid #dbe2ef; border-radius: 14px; padding: 28px 24px; background: #fff; transition: .2s; }
+.hub-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(15,23,42,0.1); border-color: #93c5fd; }
+.hub-card-title { font-size: 30px; font-weight: 800; margin: 0 0 10px; color: #0f172a; }
+.hub-card-desc { font-size: 16px; color: #64748b; line-height: 1.6; margin: 0; }
+.hub-chuduan { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.hub-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
+.weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
+.weekly-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6; }
+.weekly-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 6px solid #8b5cf6; }
+.weekly-chuduan3 { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #0891b2; }
+.weekly-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 6px solid #e11d48; }
+.weekly-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 6px solid #22c55e; }
+.weekly-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f97316; }
+.weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
+.weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
+.kpi-value { font-weight: 800; color: #0f172a; }
+.kpi-low { color: #b91c1c; }
+.kpi-high { color: #15803d; }
+.weekly-table th, .weekly-table td { font-size: 16px; white-space: nowrap; padding: 6px 8px; }
+.chart-grid { display: grid; grid-template-columns: repeat(2, minmax(420px, 1fr)); gap: 12px; max-width: 1600px; margin: 12px auto 16px; justify-content: center; }
+.chart-card { background: #fff; border: 1px solid #d1d5db; border-radius: 10px; padding: 10px; }
+.chart-title { margin: 0 0 8px; font-size: 18px; color: #0f172a; font-weight: 700; }
+.weekly-entry { background: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); border-left: 8px solid #0284c7; }
+.weekly-query-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; }
+.weekly-query-bar label { font-size: 16px; font-weight: 700; color: #334155; }
+.weekly-query-bar select { min-width: 280px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; }
+.weekly-query-btn { font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }
+.weekly-query-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+.weekly-query-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 1200px) {
+  .cards { grid-template-columns: 1fr; }
+  .weekly-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .main-title { font-size: 30px; }
+  .sheet-table th, .sheet-table td { font-size: 20px; }
+  .page { zoom: 1; }
+}
+
+.changqi-table th, .changqi-table td { font-size: 22px; }
+.segment-block { margin-bottom: 18px; }
+.segment-chuduan { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); }
+.segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); }
+.segment-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); }
+.segment-name { margin: 0 0 12px; font-size: 28px; color: #0f172a; }
+.weekly-query-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 0 0 14px; padding: 12px 14px; background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; }
+.weekly-query-bar label { font-size: 16px; font-weight: 700; color: #334155; }
+.weekly-query-bar select { min-width: 320px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+.weekly-query-btn { font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }
+  </style>
+  
+</head>
+<body>
+  <div class="page">
+    <a class="nav-link" href="长期班风灵在线看板.html">← 返回长期班每日看板</a>
+    <h1 class="dashboard-title">长期班周维度在线率看板（郑州）</h1>
+    <div class="weekly-query-bar">
+      <label for="weekSelect">历史周查询（周四至周一）</label>
+      <select id="weekSelect" aria-label="选择历史周"></select>
+      <button type="button" class="weekly-query-btn" id="prevWeekBtn">上一周</button>
+      <button type="button" class="weekly-query-btn" id="nextWeekBtn">下一周</button>
+    </div>
+    <div class="dashboard-sub" id="weekSubtitle"></div>
+    <div class="dashboard-sub">页面版本：2026-09-10 18:50｜不含周二、周三</div>
+    <div id="weeklySections"></div>
+  </div>
+  <script>
+    const HISTORY = [{"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7843780141843971, "pc_rate": 0.8998971631205673}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7109714285714286, "pc_rate": 0.6833285714285715}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7330169491525423, "pc_rate": 0.9088067796610171}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9223793103448276, "pc_rate": 0.8915103448275862}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8052333333333334, "pc_rate": 0.9231875}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7408136363636363, "pc_rate": 0.9305590909090911}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.9016090909090909, "pc_rate": 0.42061818181818184}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.823, "pc_rate": 0.4391833333333333}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9954, "pc_rate": 0.9958499999999999}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.9963000000000001, "pc_rate": 0.0}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.603825, "pc_rate": 0.7988375000000001}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.71192, "pc_rate": 0.81216}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.74102, "pc_rate": 0.8524800000000001}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.5774374999999999, "pc_rate": 0.588775}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.66635, "pc_rate": 0.6705333333333333}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.6689083333333334, "pc_rate": 0.7464854166666667}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.8102078014184397, "pc_rate": 0.9591241134751771}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7752714285714285, "pc_rate": 0.8275}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7463389830508474, "pc_rate": 0.9666576271186441}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9606241379310344, "pc_rate": 0.9654517241379309}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8312499999999999, "pc_rate": 0.9593875000000001}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7713772727272726, "pc_rate": 0.9721727272727271}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8663454545454545, "pc_rate": 0.5711363636363637}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.8231666666666667, "pc_rate": 0.6075666666666667}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9991, "pc_rate": 0.9991}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.8642, "pc_rate": 0.21296666666666667}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.8657374999999999, "pc_rate": 0.9943124999999999}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.8866066666666667, "pc_rate": 0.9019733333333334}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.8360099999999999, "pc_rate": 0.95509}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.718625, "pc_rate": 0.8815}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.7595666666666666, "pc_rate": 0.9142}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.8186312499999998, "pc_rate": 0.9077541666666665}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7923531914893617, "pc_rate": 0.9427460992907801}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7930142857142857, "pc_rate": 0.833742857142857}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7259949152542373, "pc_rate": 0.9355830508474574}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9394103448275863, "pc_rate": 0.9741655172413793}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8130916666666668, "pc_rate": 0.9430000000000001}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7536318181818182, "pc_rate": 0.9549454545454545}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8049727272727272, "pc_rate": 0.7217909090909091}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.7098833333333333, "pc_rate": 0.6166666666666667}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9153, "pc_rate": 0.82405}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.9216000000000001, "pc_rate": 0.8638666666666667}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.995725, "pc_rate": 0.9881875}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9624733333333333, "pc_rate": 0.9750666666666667}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.91259, "pc_rate": 0.99353}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9615625, "pc_rate": 0.89595}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6663666666666667, "pc_rate": 0.9253166666666667}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.90040625, "pc_rate": 0.9413812500000001}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.8089801418439716, "pc_rate": 0.8278751773049644}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.8545142857142858, "pc_rate": 0.7992}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7397830508474575, "pc_rate": 0.8284033898305082}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9602413793103447, "pc_rate": 0.7740379310344828}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8225625, "pc_rate": 0.8392375}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7658590909090909, "pc_rate": 0.8941545454545454}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.7701999999999999, "pc_rate": 0.8033545454545454}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.6949166666666667, "pc_rate": 0.7283833333333333}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9977, "pc_rate": 0.7676000000000001}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.7690999999999999, "pc_rate": 0.9771333333333333}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.9961875, "pc_rate": 0.9591624999999999}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9988333333333334, "pc_rate": 0.9200599999999999}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.9460200000000001, "pc_rate": 0.9016499999999998}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9977, "pc_rate": 0.9581124999999999}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6473833333333333, "pc_rate": 0.9452166666666667}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.9224604166666666, "pc_rate": 0.9130604166666666}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7975218309859156, "pc_rate": 0.9283633802816901}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.8568714285714286, "pc_rate": 0.8537142857142858}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7357066666666667, "pc_rate": 0.8923933333333334}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9179448275862069, "pc_rate": 0.9864655172413791}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8125791666666666, "pc_rate": 0.9209416666666667}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7720590909090909, "pc_rate": 0.9817227272727274}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8242363636363635, "pc_rate": 0.5018636363636364}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.7864333333333334, "pc_rate": 0.5233166666666667}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9944, "pc_rate": 0.54215}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.7864, "pc_rate": 0.4321}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.9608874999999999, "pc_rate": 0.9759375}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9888933333333333, "pc_rate": 0.9398}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.8613900000000001, "pc_rate": 0.94693}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9993125, "pc_rate": 0.96295}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6658999999999999, "pc_rate": 0.95755}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.8984229166666666, "pc_rate": 0.9338062500000001}];
+    const WEEK_OPTIONS = ["2026-09-03"];
+    const DEFAULT_WEEK = "2026-09-03";
+    const TODAY_WEEK = "2026-09-03";
+    const XUEBU_ORDER = ["初中", "高中", "小学"];
+    const SUBJECT_ORDER = ["英语", "语文", "数学", "物理", "化学"];
+    const WEEKDAY_NAMES = ["周四", "周五", "周六", "周日", "周一"];
+
+    const weekSelect = document.getElementById("weekSelect");
+    const prevWeekBtn = document.getElementById("prevWeekBtn");
+    const nextWeekBtn = document.getElementById("nextWeekBtn");
+    const weeklySections = document.getElementById("weeklySections");
+
+    function addDays(iso, days) {
+      const parts = iso.split("-").map(Number);
+      const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+      dt.setDate(dt.getDate() + days);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const d = String(dt.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function weekDays(weekStart) {
+      return Array.from({ length: 5 }, (_, i) => addDays(weekStart, i));
+    }
+
+    function weekLabel(weekStart) {
+      const days = weekDays(weekStart);
+      let suffix = "";
+      if (weekStart === TODAY_WEEK) suffix = "（本周）";
+      else if (weekStart === addDays(TODAY_WEEK, -7)) suffix = "（上周）";
+      return `${weekStart} ~ ${days[4]}（周四至周一）${suffix}`;
+    }
+
+    function pct(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "#N/A";
+      return (v * 100).toFixed(2) + "%";
+    }
+
+    function rateClass(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "";
+      if (v < 0.5) return " rate-low";
+      if (v > 0.8) return " rate-high";
+      return "";
+    }
+
+    function lookupRate(rows, dt, oc, xuebu, subject, metric) {
+      const row = rows.find((item) => item.date === dt && item.oc === oc && item.xuebu === xuebu && item.subject === subject);
+      if (!row) return null;
+      return row[metric];
+    }
+
+    function subjectsFor(rows, oc, xuebu) {
+      const available = new Set(rows.filter((item) => item.oc === oc && item.xuebu === xuebu && !item.subject.endsWith("汇总")).map((item) => item.subject));
+      const subjects = SUBJECT_ORDER.filter((subject) => available.has(subject));
+      subjects.push(`${xuebu} 汇总`);
+      return subjects;
+    }
+
+    function buildXuebuTable(rows, days, xuebu) {
+      const ocs = [...new Set(rows.filter((item) => item.xuebu === xuebu).map((item) => item.oc))].sort();
+      if (!ocs.length) return "";
+      const dateHeaders = days.map((dt, idx) => `<th colspan="2">${WEEKDAY_NAMES[idx]}<br>${dt.replaceAll("-", "/")}</th>`).join("");
+      const subHeaders = days.map(() => "<th>风灵app在线率</th><th>风灵pc在线率</th>").join("");
+      const bodyRows = [];
+      for (const oc of ocs) {
+        const subjects = subjectsFor(rows, oc, xuebu);
+        const ocRows = subjects.map((subject, idx) => {
+          const cls = subject.endsWith("汇总") ? "summary-row" : "";
+          const cells = [`<td class="${cls}">${subject}</td>`];
+          for (const dt of days) {
+            const app = lookupRate(rows, dt, oc, xuebu, subject, "app_rate");
+            const pc = lookupRate(rows, dt, oc, xuebu, subject, "pc_rate");
+            cells.push(`<td class="rate-blue${rateClass(app)}">${pct(app)}</td><td class="rate-blue${rateClass(pc)}">${pct(pc)}</td>`);
+          }
+          const row = `<tr>${cells.join("")}</tr>`;
+          if (idx === 0) {
+            return row.replace("<tr>", `<tr><td rowspan="${subjects.length}" class="left-group">${oc}</td>`);
+          }
+          return row;
+        });
+        bodyRows.push(...ocRows);
+      }
+      const styleMap = { "初中": "segment-chuduan", "高中": "segment-gaoduan", "小学": "segment-xiaoduan" };
+      const colorMap = { "初中": "#3b82f6", "高中": "#f97316", "小学": "#22c55e" };
+      return `
+<section class="segment-block ${styleMap[xuebu] || ""}" style="border-left:8px solid ${colorMap[xuebu] || "#6d28d9"}">
+  <h2 class="segment-name">${xuebu}</h2>
+  <table class="sheet-table changqi-table">
+    <thead>
+      <tr><th rowspan="2">运营中心</th><th rowspan="2">学科</th>${dateHeaders}</tr>
+      <tr>${subHeaders}</tr>
+    </thead>
+    <tbody>${bodyRows.join("")}</tbody>
+  </table>
+</section>`;
+    }
+
+    function renderWeek(weekStart) {
+      const days = weekDays(weekStart);
+      const rows = HISTORY.filter((item) => days.includes(item.date));
+      document.getElementById("weekSubtitle").textContent = weekLabel(weekStart);
+      weeklySections.innerHTML = XUEBU_ORDER
+        .filter((xuebu) => rows.some((item) => item.xuebu === xuebu))
+        .map((xuebu) => buildXuebuTable(rows, days, xuebu))
+        .join("") || '<p class="dashboard-sub">该周暂无周四至周一数据</p>';
+      weekSelect.value = weekStart;
+      const idx = WEEK_OPTIONS.indexOf(weekStart);
+      prevWeekBtn.disabled = idx < 0 || idx >= WEEK_OPTIONS.length - 1;
+      nextWeekBtn.disabled = idx <= 0;
+      const url = new URL(window.location.href);
+      url.searchParams.set("week", weekStart);
+      window.history.replaceState(null, "", url.toString());
+    }
+
+    weekSelect.innerHTML = WEEK_OPTIONS.map((weekStart) => `<option value="${weekStart}">${weekLabel(weekStart)}</option>`).join("");
+    weekSelect.addEventListener("change", () => renderWeek(weekSelect.value));
+    prevWeekBtn.addEventListener("click", () => {
+      const idx = WEEK_OPTIONS.indexOf(weekSelect.value);
+      if (idx >= 0 && idx < WEEK_OPTIONS.length - 1) renderWeek(WEEK_OPTIONS[idx + 1]);
+    });
+    nextWeekBtn.addEventListener("click", () => {
+      const idx = WEEK_OPTIONS.indexOf(weekSelect.value);
+      if (idx > 0) renderWeek(WEEK_OPTIONS[idx - 1]);
+    });
+    const params = new URLSearchParams(window.location.search);
+    const initialWeek = params.get("week");
+    renderWeek(WEEK_OPTIONS.includes(initialWeek) ? initialWeek : DEFAULT_WEEK);
+  </script>
+</body>
+</html>
