@@ -21,6 +21,7 @@ SUBJECT_ORDER = ["英语", "语文", "数学", "物理", "化学"]
 UNKNOWN_SUBJECT = "未分学科"
 XUEBU_ORDER = ["初中", "高中", "小学"]
 MAX_DATE_COLUMNS = 14
+COMPLIANCE_THRESHOLD = 0.999
 XUEBU_STYLES = {
     "初中": ("segment-chuduan", "#3b82f6"),
     "高中": ("segment-gaoduan", "#f97316"),
@@ -164,10 +165,40 @@ def rate_class(value: Optional[float]) -> str:
     return ""
 
 
+def is_rate_compliant(value: Optional[float]) -> bool:
+    return pd.notna(value) and float(value) >= COMPLIANCE_THRESHOLD
+
+
 def is_non_compliant(app_rate: Optional[float], pc_rate: Optional[float]) -> bool:
-    app_ok = pd.notna(app_rate) and float(app_rate) >= 1
-    pc_ok = pd.notna(pc_rate) and float(pc_rate) >= 1
-    return not (app_ok and pc_ok)
+    return not (is_rate_compliant(app_rate) and is_rate_compliant(pc_rate))
+
+
+def non_compliance_label(app_rate: Optional[float], pc_rate: Optional[float]) -> str:
+    flags = []
+    if not is_rate_compliant(app_rate):
+        flags.append("app")
+    if not is_rate_compliant(pc_rate):
+        flags.append("pc")
+    return "、".join(flags) if flags else "-"
+
+
+def detail_page_styles() -> str:
+    return """
+body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f7f8fc; color: #111827; }
+.page { max-width: 920px; margin: 0 auto; }
+.nav-link { display: inline-block; margin-bottom: 12px; color: #1d4ed8; text-decoration: none; font-weight: 700; }
+.main-title { text-align: center; color: #7e22ce; font-size: 28px; margin: 0 0 16px; }
+.dashboard-sub { text-align: center; color: #64748b; margin-bottom: 16px; }
+.segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+.segment-name { margin: 0 0 10px; font-size: 22px; color: #0f172a; }
+.section-title { margin: 14px 0 8px; font-size: 18px; color: #334155; }
+.detail-table { width: 100%; border-collapse: collapse; background: #fff; table-layout: fixed; }
+.detail-table th, .detail-table td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-size: 14px; line-height: 1.4; word-break: break-word; }
+.detail-table thead th { background: #0c6cb3; color: #fff; font-weight: 700; }
+.detail-table .col-name { text-align: left; }
+.rate-low { color: #b91c1c; background: #fee2e2; font-weight: 700; }
+.rate-high { color: #15803d; background: #dcfce7; font-weight: 700; }
+"""
 
 
 def subject_sort_key(subject: str) -> Tuple[int, str]:
@@ -304,9 +335,7 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{title}</title>
-  <style>
-{base_styles(scale=0.55)}
-  </style>
+  <style>{detail_page_styles()}</style>
   {analytics_head_html(title)}
 </head>
 <body>
@@ -332,29 +361,37 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
             if sdf.empty:
                 continue
             rows = []
-            for i, row in enumerate(sdf.itertuples(index=False), 1):
-                app_cls = rate_class(row.app_rate)
-                pc_cls = rate_class(row.pc_rate)
+            seq = 0
+            for row in sdf.itertuples(index=False):
+                if not is_non_compliant(row.app_rate, row.pc_rate):
+                    continue
+                seq += 1
+                app_cls = " rate-low" if not is_rate_compliant(row.app_rate) else ""
+                pc_cls = " rate-low" if not is_rate_compliant(row.pc_rate) else ""
                 rows.append(
                     "<tr>"
-                    f"<td>{i}</td>"
-                    f"<td>{escape(str(row.年级))}</td>"
-                    f"<td>{escape(str(row.姓名))}</td>"
-                    f'<td class="rate-yellow{app_cls}">{pct_text(row.app_rate)}</td>'
-                    f'<td class="rate-yellow{pc_cls}">{pct_text(row.pc_rate)}</td>'
-                    f"<td>{escape(str(getattr(row, 'app不在线时间段', '') or ''))}</td>"
-                    f"<td>{escape(str(getattr(row, 'pc不在线时间段', '') or ''))}</td>"
+                    f"<td>{seq}</td>"
+                    f"<td>{escape(str(row.年级) or '-')}</td>"
+                    f'<td class="col-name">{escape(str(row.姓名))}</td>'
+                    f'<td class="{app_cls.strip()}">{pct_text(row.app_rate)}</td>'
+                    f'<td class="{pc_cls.strip()}">{pct_text(row.pc_rate)}</td>'
+                    f"<td>{escape(non_compliance_label(row.app_rate, row.pc_rate))}</td>"
                     "</tr>"
                 )
+            if not rows:
+                continue
             subject_sections.append(
                 f"""
   <h3 class="section-title">{escape(subject)}</h3>
-  <table class="sheet-table mini-table">
+  <table class="detail-table">
     <thead>
       <tr>
-        <th>序号</th><th>年级</th><th>姓名</th>
-        <th>风灵app在线率</th><th>风灵pc在线率</th>
-        <th>app不在线时段</th><th>pc不在线时段</th>
+        <th style="width:48px">序号</th>
+        <th style="width:72px">年级</th>
+        <th>姓名</th>
+        <th style="width:110px">app在线率</th>
+        <th style="width:110px">pc在线率</th>
+        <th style="width:88px">未达标项</th>
       </tr>
     </thead>
     <tbody>{''.join(rows)}</tbody>
@@ -379,11 +416,7 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{title}</title>
-  <style>
-{base_styles(scale=0.55)}
-.detail-block {{ margin-bottom: 22px; }}
-.changqi-table th, .changqi-table td {{ font-size: 22px; }}
-  </style>
+  <style>{detail_page_styles()}</style>
   {analytics_head_html(title)}
 </head>
 <body>
