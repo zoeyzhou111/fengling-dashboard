@@ -173,31 +173,35 @@ def is_non_compliant(app_rate: Optional[float], pc_rate: Optional[float]) -> boo
     return not (is_rate_compliant(app_rate) and is_rate_compliant(pc_rate))
 
 
-def non_compliance_label(app_rate: Optional[float], pc_rate: Optional[float]) -> str:
-    flags = []
-    if not is_rate_compliant(app_rate):
-        flags.append("app")
-    if not is_rate_compliant(pc_rate):
-        flags.append("pc")
-    return "、".join(flags) if flags else "-"
+def format_offline_slot(value) -> Tuple[str, str]:
+    text = "" if pd.isna(value) else str(value).strip()
+    if not text or text == ":-:":
+        return "-", ""
+    safe = escape(text)
+    if len(text) <= 40:
+        return safe, safe
+    short = escape(text[:37]) + "..."
+    return short, safe
 
 
 def detail_page_styles() -> str:
     return """
 body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f7f8fc; color: #111827; }
-.page { max-width: 920px; margin: 0 auto; }
+.page { max-width: 980px; margin: 0 auto; }
 .nav-link { display: inline-block; margin-bottom: 12px; color: #1d4ed8; text-decoration: none; font-weight: 700; }
 .main-title { text-align: center; color: #7e22ce; font-size: 28px; margin: 0 0 16px; }
 .dashboard-sub { text-align: center; color: #64748b; margin-bottom: 16px; }
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
 .segment-name { margin: 0 0 10px; font-size: 22px; color: #0f172a; }
 .section-title { margin: 14px 0 8px; font-size: 18px; color: #334155; }
-.detail-table { width: 100%; border-collapse: collapse; background: #fff; table-layout: fixed; }
-.detail-table th, .detail-table td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: center; font-size: 14px; line-height: 1.4; word-break: break-word; }
-.detail-table thead th { background: #0c6cb3; color: #fff; font-weight: 700; }
-.detail-table .col-name { text-align: left; }
-.rate-low { color: #b91c1c; background: #fee2e2; font-weight: 700; }
-.rate-high { color: #15803d; background: #dcfce7; font-weight: 700; }
+.table-wrap { overflow-x: auto; }
+.detail-table { width: max-content; max-width: 100%; border-collapse: collapse; background: #fff; table-layout: fixed; }
+.detail-table th, .detail-table td { border: 2px solid #111827; padding: 6px 8px; text-align: center; font-size: 16px; line-height: 1.3; white-space: nowrap; }
+.detail-table thead th { background: #0c6cb3; color: #fff; font-weight: 800; }
+.detail-table .col-name { text-align: center; }
+.detail-table .col-slot { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.rate-yellow { background: linear-gradient(90deg, #fde89f 0%, #fff9ea 100%); font-weight: 800; }
+.rate-low { color: #b91c1c !important; background: #fee2e2 !important; font-weight: 800; }
 """
 
 
@@ -366,16 +370,21 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
                 if not is_non_compliant(row.app_rate, row.pc_rate):
                     continue
                 seq += 1
-                app_cls = " rate-low" if not is_rate_compliant(row.app_rate) else ""
-                pc_cls = " rate-low" if not is_rate_compliant(row.pc_rate) else ""
+                app_cls = "rate-yellow" + (" rate-low" if not is_rate_compliant(row.app_rate) else "")
+                pc_cls = "rate-yellow" + (" rate-low" if not is_rate_compliant(row.pc_rate) else "")
+                app_slot, app_slot_title = format_offline_slot(getattr(row, "app不在线时间段", ""))
+                pc_slot, pc_slot_title = format_offline_slot(getattr(row, "pc不在线时间段", ""))
+                app_title = f' title="{app_slot_title}"' if app_slot_title else ""
+                pc_title = f' title="{pc_slot_title}"' if pc_slot_title else ""
                 rows.append(
                     "<tr>"
                     f"<td>{seq}</td>"
-                    f"<td>{escape(str(row.年级) or '-')}</td>"
+                    f"<td>{escape(str(row.年级) or '')}</td>"
                     f'<td class="col-name">{escape(str(row.姓名))}</td>'
-                    f'<td class="{app_cls.strip()}">{pct_text(row.app_rate)}</td>'
-                    f'<td class="{pc_cls.strip()}">{pct_text(row.pc_rate)}</td>'
-                    f"<td>{escape(non_compliance_label(row.app_rate, row.pc_rate))}</td>"
+                    f'<td class="{app_cls}">{pct_text(row.app_rate)}</td>'
+                    f'<td class="{pc_cls}">{pct_text(row.pc_rate)}</td>'
+                    f'<td class="col-slot"{app_title}>{app_slot}</td>'
+                    f'<td class="col-slot"{pc_title}>{pc_slot}</td>'
                     "</tr>"
                 )
             if not rows:
@@ -383,19 +392,22 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
             subject_sections.append(
                 f"""
   <h3 class="section-title">{escape(subject)}</h3>
+  <div class="table-wrap">
   <table class="detail-table">
     <thead>
       <tr>
-        <th style="width:48px">序号</th>
-        <th style="width:72px">年级</th>
-        <th>姓名</th>
-        <th style="width:110px">app在线率</th>
-        <th style="width:110px">pc在线率</th>
-        <th style="width:88px">未达标项</th>
+        <th style="width:52px">序号</th>
+        <th style="width:64px">年级</th>
+        <th style="width:88px">姓名</th>
+        <th style="width:118px">风灵app在线率</th>
+        <th style="width:118px">风灵pc在线率</th>
+        <th style="width:132px">app不在线时段</th>
+        <th style="width:132px">pc不在线时段</th>
       </tr>
     </thead>
     <tbody>{''.join(rows)}</tbody>
   </table>
+  </div>
 """
             )
         if subject_sections:
