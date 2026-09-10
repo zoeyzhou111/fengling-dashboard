@@ -1624,6 +1624,8 @@ def build_daily_dashboard_page(
     <div class="weekly-inline-link-wrap">
       <a class="weekly-inline-link" href="{weekly_href}">每周维度在线率看板（点击进入）</a>
       <span class="weekly-inline-sep">｜</span>
+      <a class="weekly-inline-link" href="长期班风灵在线看板.html">长期班风灵在线看板（点击进入）</a>
+      <span class="weekly-inline-sep">｜</span>
       <a class="weekly-inline-link" href="访问统计看板.html">看板访问统计（点击进入）</a>
     </div>
     <div class="dashboard-sub">{date_text}｜点击卡片进入对应明细页（战队维度）</div>

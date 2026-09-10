@@ -96,12 +96,17 @@ run_cmd "cd \"$ROOT_DIR\" && python3 \"generate_daily_reports.py\" \
 echo "== Step 2: regenerate web dashboard =="
 run_cmd "cd \"$ROOT_DIR\" && python3 \"build_daily_web_dashboard.py\""
 
+echo "== Step 2b: regenerate long-term class dashboard =="
+CHANGQI_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "长期班辅导风灵在线明细数据_")"
+echo "长期班源文件: $CHANGQI_FILE"
+run_cmd "cd \"$ROOT_DIR\" && python3 \"build_changqi_dashboard.py\" --source \"$CHANGQI_FILE\""
+
 echo "== Step 3: git add/commit/push =="
 if [[ "$DRY_RUN" == "1" ]]; then
   echo "[DRY_RUN] git commit/push skipped in dry run"
 else
   cd "$ROOT_DIR"
-  git add ".gitignore" ".nojekyll" ".github/workflows/deploy-pages.yml" "build_daily_web_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "config.env.example" "每日三表汇总看板.html" "每日三表汇总看板-初中.html" "每日三表汇总看板-高中.html" "周维度在线率看板.html" "周维度在线率看板-初中.html" "周维度在线率看板-高中.html" "访问统计看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
+  git add ".gitignore" ".nojekyll" ".github/workflows/deploy-pages.yml" "build_daily_web_dashboard.py" "build_changqi_dashboard.py" "generate_daily_reports.py" "update_and_publish.sh" "config.env.example" "每日三表汇总看板.html" "每日三表汇总看板-初中.html" "每日三表汇总看板-高中.html" "周维度在线率看板.html" "周维度在线率看板-初中.html" "周维度在线率看板-高中.html" "长期班风灵在线看板.html" "长期班风灵在线看板_详情" "changqi_history.csv" "changqi_detail_history.csv" "访问统计看板.html" "dashboard_history.csv" "每日三表汇总看板_详情" "index.html"
   if git diff --cached --quiet; then
     echo "没有检测到需要提交的看板更新，跳过 commit。"
   else
