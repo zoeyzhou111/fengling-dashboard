@@ -18,6 +18,7 @@ CHANGQI_HISTORY_CSV = ROOT / "changqi_history.csv"
 CHANGQI_DETAIL_CSV = ROOT / "changqi_detail_history.csv"
 
 SUBJECT_ORDER = ["英语", "语文", "数学", "物理", "化学"]
+UNKNOWN_SUBJECT = "未分学科"
 XUEBU_ORDER = ["初中", "高中", "小学"]
 MAX_DATE_COLUMNS = 14
 XUEBU_STYLES = {
@@ -36,6 +37,13 @@ def find_latest_source(downloads_dir: Path) -> Optional[Path]:
     return candidates[0] if candidates else None
 
 
+def normalize_subject(value) -> str:
+    text = "" if pd.isna(value) else str(value).strip()
+    if not text or text.lower() == "nan":
+        return ""
+    return text if text in SUBJECT_ORDER else ""
+
+
 def load_source(path: Path) -> pd.DataFrame:
     xl = pd.ExcelFile(path)
     sheet = xl.sheet_names[0]
@@ -51,9 +59,12 @@ def load_source(path: Path) -> pd.DataFrame:
     }
     df = df.rename(columns={k: v for k, v in rename.items() if k in df.columns})
     df["日期"] = pd.to_datetime(df["日期"], errors="coerce").dt.strftime("%Y-%m-%d")
-    for col in ("运营中心", "学部", "学科", "年级", "姓名", "邮箱"):
+    for col in ("运营中心", "学部", "年级", "姓名", "邮箱"):
         if col in df.columns:
             df[col] = df[col].fillna("").astype(str).str.strip()
+            df.loc[df[col].str.lower().eq("nan"), col] = ""
+    if "学科" in df.columns:
+        df["学科"] = df["学科"].map(normalize_subject)
     df["app_rate"] = pd.to_numeric(df.get("app_rate"), errors="coerce")
     df["pc_rate"] = pd.to_numeric(df.get("pc_rate"), errors="coerce")
     return df.dropna(subset=["日期"]).copy()
@@ -62,7 +73,8 @@ def load_source(path: Path) -> pd.DataFrame:
 def aggregate_history(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     keys = ["日期", "运营中心", "学部", "学科"]
-    for group_keys, gdf in df.groupby(keys, dropna=False):
+    subject_df = df[df["学科"].astype(str).str.strip().ne("")].copy()
+    for group_keys, gdf in subject_df.groupby(keys, dropna=False):
         if isinstance(group_keys, tuple):
             row = dict(zip(keys, group_keys))
         else:
@@ -96,6 +108,9 @@ def merge_history(existing: pd.DataFrame, new_rows: pd.DataFrame) -> pd.DataFram
     else:
         combined = pd.concat([existing, new_rows], ignore_index=True)
     key_cols = ["日期", "运营中心", "学部", "学科"]
+    combined["学科"] = combined["学科"].fillna("").astype(str).str.strip()
+    combined.loc[combined["学科"].str.lower().eq("nan"), "学科"] = ""
+    combined = combined[~((combined["学科"] == "") & ~combined["学科"].str.endswith("汇总"))]
     combined = combined.drop_duplicates(subset=key_cols, keep="last")
     combined["日期"] = pd.to_datetime(combined["日期"], errors="coerce")
     combined = combined.sort_values(["日期", "运营中心", "学部", "学科"]).reset_index(drop=True)
@@ -158,9 +173,20 @@ def is_non_compliant(app_rate: Optional[float], pc_rate: Optional[float]) -> boo
 def subject_sort_key(subject: str) -> Tuple[int, str]:
     if subject.endswith("汇总"):
         return (99, subject)
+    if subject == UNKNOWN_SUBJECT:
+        return (98, subject)
     if subject in SUBJECT_ORDER:
         return (SUBJECT_ORDER.index(subject), subject)
     return (50, subject)
+
+
+def display_subjects(history: pd.DataFrame, oc: str, xuebu: str) -> List[str]:
+    available = set(
+        history.loc[
+            (history["运营中心"] == oc) & (history["学部"] == xuebu), "学科"
+        ].astype(str)
+    )
+    return [s for s in SUBJECT_ORDER if s in available]
 
 
 def latest_dates(history: pd.DataFrame, limit: int = MAX_DATE_COLUMNS) -> List[str]:
@@ -204,14 +230,7 @@ def build_pivot_table_for_xuebu(history: pd.DataFrame, dates: List[str], xuebu: 
 
     body_rows: List[str] = []
     for oc in centers:
-        subjects = sorted(
-            {
-                s
-                for s in part.loc[part["运营中心"] == oc, "学科"].astype(str)
-                if not str(s).endswith("汇总")
-            },
-            key=subject_sort_key,
-        )
+        subjects = display_subjects(part, oc, xuebu)
         subjects.append(f"{xuebu} 汇总")
         oc_rows: List[str] = []
         for idx, subject in enumerate(subjects):
@@ -305,9 +324,11 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
         xdf = day_df[day_df["学部"] == xuebu]
         style_cls, border_color = XUEBU_STYLES.get(xuebu, ("segment-block", "#6d28d9"))
         subject_sections: List[str] = []
-        subjects = sorted(xdf["学科"].unique(), key=subject_sort_key)
+        xdf = xdf.copy()
+        xdf["展示学科"] = xdf["学科"].where(xdf["学科"].astype(str).str.strip().ne(""), UNKNOWN_SUBJECT)
+        subjects = sorted(xdf["展示学科"].unique(), key=subject_sort_key)
         for subject in subjects:
-            sdf = xdf[xdf["学科"] == subject].sort_values(["年级", "姓名"])
+            sdf = xdf[xdf["展示学科"] == subject].sort_values(["年级", "姓名"])
             if sdf.empty:
                 continue
             rows = []
