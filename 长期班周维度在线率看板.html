@@ -110,6 +110,11 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .weekly-query-bar label { font-size: 16px; font-weight: 700; color: #334155; }
 .weekly-query-bar select { min-width: 320px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
 .weekly-query-btn { font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }
+.section-title { font-size: 20px; margin: 12px 0 8px; color: #334155; font-weight: 700; }
+.subject-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.subject-summary-card { border: 1px solid #dbe2ef; border-radius: 10px; background: #fff; padding: 10px 12px; }
+.subject-summary-name { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+.subject-chart-grid { margin-bottom: 12px; }
   </style>
   
 </head>
@@ -124,18 +129,34 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
       <button type="button" class="weekly-query-btn" id="nextWeekBtn">下一周</button>
     </div>
     <div class="dashboard-sub" id="weekSubtitle"></div>
-    <div class="dashboard-sub">页面版本：2026-09-10 18:50｜不含周二、周三</div>
+    <div class="dashboard-sub">页面版本：2026-09-10 18:54｜不含周二、周三</div>
+    <section class="weekly-grid" id="weeklyCards"></section>
+    <section class="chart-grid">
+      <div class="chart-card">
+        <h3 class="chart-title">风灵app在线率趋势（%）</h3>
+        <canvas id="appTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">风灵pc在线率趋势（%）</h3>
+        <canvas id="pcTrend"></canvas>
+      </div>
+    </section>
     <div id="weeklySections"></div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
-    const HISTORY = [{"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7843780141843971, "pc_rate": 0.8998971631205673}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7109714285714286, "pc_rate": 0.6833285714285715}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7330169491525423, "pc_rate": 0.9088067796610171}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9223793103448276, "pc_rate": 0.8915103448275862}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8052333333333334, "pc_rate": 0.9231875}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7408136363636363, "pc_rate": 0.9305590909090911}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.9016090909090909, "pc_rate": 0.42061818181818184}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.823, "pc_rate": 0.4391833333333333}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9954, "pc_rate": 0.9958499999999999}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.9963000000000001, "pc_rate": 0.0}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.603825, "pc_rate": 0.7988375000000001}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.71192, "pc_rate": 0.81216}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.74102, "pc_rate": 0.8524800000000001}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.5774374999999999, "pc_rate": 0.588775}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.66635, "pc_rate": 0.6705333333333333}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.6689083333333334, "pc_rate": 0.7464854166666667}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.8102078014184397, "pc_rate": 0.9591241134751771}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7752714285714285, "pc_rate": 0.8275}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7463389830508474, "pc_rate": 0.9666576271186441}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9606241379310344, "pc_rate": 0.9654517241379309}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8312499999999999, "pc_rate": 0.9593875000000001}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7713772727272726, "pc_rate": 0.9721727272727271}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8663454545454545, "pc_rate": 0.5711363636363637}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.8231666666666667, "pc_rate": 0.6075666666666667}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9991, "pc_rate": 0.9991}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.8642, "pc_rate": 0.21296666666666667}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.8657374999999999, "pc_rate": 0.9943124999999999}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.8866066666666667, "pc_rate": 0.9019733333333334}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.8360099999999999, "pc_rate": 0.95509}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.718625, "pc_rate": 0.8815}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.7595666666666666, "pc_rate": 0.9142}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.8186312499999998, "pc_rate": 0.9077541666666665}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7923531914893617, "pc_rate": 0.9427460992907801}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7930142857142857, "pc_rate": 0.833742857142857}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7259949152542373, "pc_rate": 0.9355830508474574}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9394103448275863, "pc_rate": 0.9741655172413793}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8130916666666668, "pc_rate": 0.9430000000000001}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7536318181818182, "pc_rate": 0.9549454545454545}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8049727272727272, "pc_rate": 0.7217909090909091}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.7098833333333333, "pc_rate": 0.6166666666666667}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9153, "pc_rate": 0.82405}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.9216000000000001, "pc_rate": 0.8638666666666667}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.995725, "pc_rate": 0.9881875}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9624733333333333, "pc_rate": 0.9750666666666667}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.91259, "pc_rate": 0.99353}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9615625, "pc_rate": 0.89595}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6663666666666667, "pc_rate": 0.9253166666666667}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.90040625, "pc_rate": 0.9413812500000001}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.8089801418439716, "pc_rate": 0.8278751773049644}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.8545142857142858, "pc_rate": 0.7992}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7397830508474575, "pc_rate": 0.8284033898305082}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9602413793103447, "pc_rate": 0.7740379310344828}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8225625, "pc_rate": 0.8392375}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7658590909090909, "pc_rate": 0.8941545454545454}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.7701999999999999, "pc_rate": 0.8033545454545454}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.6949166666666667, "pc_rate": 0.7283833333333333}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9977, "pc_rate": 0.7676000000000001}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.7690999999999999, "pc_rate": 0.9771333333333333}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.9961875, "pc_rate": 0.9591624999999999}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9988333333333334, "pc_rate": 0.9200599999999999}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.9460200000000001, "pc_rate": 0.9016499999999998}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9977, "pc_rate": 0.9581124999999999}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6473833333333333, "pc_rate": 0.9452166666666667}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.9224604166666666, "pc_rate": 0.9130604166666666}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7975218309859156, "pc_rate": 0.9283633802816901}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.8568714285714286, "pc_rate": 0.8537142857142858}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7357066666666667, "pc_rate": 0.8923933333333334}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9179448275862069, "pc_rate": 0.9864655172413791}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8125791666666666, "pc_rate": 0.9209416666666667}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7720590909090909, "pc_rate": 0.9817227272727274}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8242363636363635, "pc_rate": 0.5018636363636364}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.7864333333333334, "pc_rate": 0.5233166666666667}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9944, "pc_rate": 0.54215}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.7864, "pc_rate": 0.4321}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.9608874999999999, "pc_rate": 0.9759375}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9888933333333333, "pc_rate": 0.9398}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.8613900000000001, "pc_rate": 0.94693}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9993125, "pc_rate": 0.96295}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6658999999999999, "pc_rate": 0.95755}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.8984229166666666, "pc_rate": 0.9338062500000001}];
+    const HISTORY = [{"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7843780141843971, "pc_rate": 0.8998971631205673, "headcount": 141}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7109714285714286, "pc_rate": 0.6833285714285715, "headcount": 7}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7330169491525423, "pc_rate": 0.9088067796610171, "headcount": 59}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9223793103448276, "pc_rate": 0.8915103448275862, "headcount": 29}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8052333333333334, "pc_rate": 0.9231875, "headcount": 24}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7408136363636363, "pc_rate": 0.9305590909090911, "headcount": 22}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.9016090909090909, "pc_rate": 0.42061818181818184, "headcount": 11}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.823, "pc_rate": 0.4391833333333333, "headcount": 6}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9954, "pc_rate": 0.9958499999999999, "headcount": 2}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.9963000000000001, "pc_rate": 0.0, "headcount": 3}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.603825, "pc_rate": 0.7988375000000001, "headcount": 8}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.71192, "pc_rate": 0.81216, "headcount": 15}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.74102, "pc_rate": 0.8524800000000001, "headcount": 10}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.5774374999999999, "pc_rate": 0.588775, "headcount": 8}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.66635, "pc_rate": 0.6705333333333333, "headcount": 6}, {"date": "2026-09-03", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.6689083333333334, "pc_rate": 0.7464854166666667, "headcount": 48}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.8102078014184397, "pc_rate": 0.9591241134751771, "headcount": 141}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7752714285714285, "pc_rate": 0.8275, "headcount": 7}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7463389830508474, "pc_rate": 0.9666576271186441, "headcount": 59}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9606241379310344, "pc_rate": 0.9654517241379309, "headcount": 29}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8312499999999999, "pc_rate": 0.9593875000000001, "headcount": 24}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7713772727272726, "pc_rate": 0.9721727272727271, "headcount": 22}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8663454545454545, "pc_rate": 0.5711363636363637, "headcount": 11}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.8231666666666667, "pc_rate": 0.6075666666666667, "headcount": 6}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9991, "pc_rate": 0.9991, "headcount": 2}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.8642, "pc_rate": 0.21296666666666667, "headcount": 3}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.8657374999999999, "pc_rate": 0.9943124999999999, "headcount": 8}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.8866066666666667, "pc_rate": 0.9019733333333334, "headcount": 15}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.8360099999999999, "pc_rate": 0.95509, "headcount": 10}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.718625, "pc_rate": 0.8815, "headcount": 8}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.7595666666666666, "pc_rate": 0.9142, "headcount": 6}, {"date": "2026-09-04", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.8186312499999998, "pc_rate": 0.9077541666666665, "headcount": 48}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7923531914893617, "pc_rate": 0.9427460992907801, "headcount": 141}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.7930142857142857, "pc_rate": 0.833742857142857, "headcount": 7}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7259949152542373, "pc_rate": 0.9355830508474574, "headcount": 59}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9394103448275863, "pc_rate": 0.9741655172413793, "headcount": 29}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8130916666666668, "pc_rate": 0.9430000000000001, "headcount": 24}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7536318181818182, "pc_rate": 0.9549454545454545, "headcount": 22}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8049727272727272, "pc_rate": 0.7217909090909091, "headcount": 11}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.7098833333333333, "pc_rate": 0.6166666666666667, "headcount": 6}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9153, "pc_rate": 0.82405, "headcount": 2}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.9216000000000001, "pc_rate": 0.8638666666666667, "headcount": 3}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.995725, "pc_rate": 0.9881875, "headcount": 8}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9624733333333333, "pc_rate": 0.9750666666666667, "headcount": 15}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.91259, "pc_rate": 0.99353, "headcount": 10}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9615625, "pc_rate": 0.89595, "headcount": 8}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6663666666666667, "pc_rate": 0.9253166666666667, "headcount": 6}, {"date": "2026-09-05", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.90040625, "pc_rate": 0.9413812500000001, "headcount": 48}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.8089801418439716, "pc_rate": 0.8278751773049644, "headcount": 141}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.8545142857142858, "pc_rate": 0.7992, "headcount": 7}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7397830508474575, "pc_rate": 0.8284033898305082, "headcount": 59}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9602413793103447, "pc_rate": 0.7740379310344828, "headcount": 29}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8225625, "pc_rate": 0.8392375, "headcount": 24}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7658590909090909, "pc_rate": 0.8941545454545454, "headcount": 22}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.7701999999999999, "pc_rate": 0.8033545454545454, "headcount": 11}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.6949166666666667, "pc_rate": 0.7283833333333333, "headcount": 6}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9977, "pc_rate": 0.7676000000000001, "headcount": 2}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.7690999999999999, "pc_rate": 0.9771333333333333, "headcount": 3}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.9961875, "pc_rate": 0.9591624999999999, "headcount": 8}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9988333333333334, "pc_rate": 0.9200599999999999, "headcount": 15}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.9460200000000001, "pc_rate": 0.9016499999999998, "headcount": 10}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9977, "pc_rate": 0.9581124999999999, "headcount": 8}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6473833333333333, "pc_rate": 0.9452166666666667, "headcount": 6}, {"date": "2026-09-06", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.9224604166666666, "pc_rate": 0.9130604166666666, "headcount": 48}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "初中 汇总", "app_rate": 0.7975218309859156, "pc_rate": 0.9283633802816901, "headcount": 142}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "化学", "app_rate": 0.8568714285714286, "pc_rate": 0.8537142857142858, "headcount": 7}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "数学", "app_rate": 0.7357066666666667, "pc_rate": 0.8923933333333334, "headcount": 60}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "物理", "app_rate": 0.9179448275862069, "pc_rate": 0.9864655172413791, "headcount": 29}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "英语", "app_rate": 0.8125791666666666, "pc_rate": 0.9209416666666667, "headcount": 24}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "初中", "subject": "语文", "app_rate": 0.7720590909090909, "pc_rate": 0.9817227272727274, "headcount": 22}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "小学 汇总", "app_rate": 0.8242363636363635, "pc_rate": 0.5018636363636364, "headcount": 11}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "数学", "app_rate": 0.7864333333333334, "pc_rate": 0.5233166666666667, "headcount": 6}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "英语", "app_rate": 0.9944, "pc_rate": 0.54215, "headcount": 2}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "小学", "subject": "语文", "app_rate": 0.7864, "pc_rate": 0.4321, "headcount": 3}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "化学", "app_rate": 0.9608874999999999, "pc_rate": 0.9759375, "headcount": 8}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "数学", "app_rate": 0.9888933333333333, "pc_rate": 0.9398, "headcount": 15}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "物理", "app_rate": 0.8613900000000001, "pc_rate": 0.94693, "headcount": 10}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "英语", "app_rate": 0.9993125, "pc_rate": 0.96295, "headcount": 8}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "语文", "app_rate": 0.6658999999999999, "pc_rate": 0.95755, "headcount": 6}, {"date": "2026-09-07", "oc": "郑州", "xuebu": "高中", "subject": "高中 汇总", "app_rate": 0.8984229166666666, "pc_rate": 0.9338062500000001, "headcount": 48}];
     const WEEK_OPTIONS = ["2026-09-03"];
     const DEFAULT_WEEK = "2026-09-03";
     const TODAY_WEEK = "2026-09-03";
     const XUEBU_ORDER = ["初中", "高中", "小学"];
     const SUBJECT_ORDER = ["英语", "语文", "数学", "物理", "化学"];
     const WEEKDAY_NAMES = ["周四", "周五", "周六", "周日", "周一"];
+    const XUEBU_COLORS = { "初中": "#3b82f6", "高中": "#f97316", "小学": "#22c55e" };
+    const SUBJECT_COLORS = { "英语": "#3b82f6", "语文": "#8b5cf6", "数学": "#f97316", "物理": "#22c55e", "化学": "#e11d48" };
+    const XUEBU_CARD_CLS = { "初中": "weekly-chuduan1", "高中": "weekly-gaoduan", "小学": "weekly-xiaoduan" };
 
+    const charts = {};
     const weekSelect = document.getElementById("weekSelect");
     const prevWeekBtn = document.getElementById("prevWeekBtn");
     const nextWeekBtn = document.getElementById("nextWeekBtn");
@@ -155,6 +176,10 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
       return Array.from({ length: 5 }, (_, i) => addDays(weekStart, i));
     }
 
+    function dayLabels(days) {
+      return days.map((dt, idx) => `${WEEKDAY_NAMES[idx]}\n${dt.slice(5).replace("-", "/")}`);
+    }
+
     function weekLabel(weekStart) {
       const days = weekDays(weekStart);
       let suffix = "";
@@ -166,6 +191,19 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
     function pct(v) {
       if (v === null || v === undefined || Number.isNaN(v)) return "#N/A";
       return (v * 100).toFixed(2) + "%";
+    }
+
+    function avg(values) {
+      const nums = values.filter((v) => v !== null && v !== undefined && !Number.isNaN(v));
+      if (!nums.length) return null;
+      return nums.reduce((a, b) => a + b, 0) / nums.length;
+    }
+
+    function kpiClass(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "";
+      if (v < 0.5) return " kpi-low";
+      if (v > 0.8) return " kpi-high";
+      return "";
     }
 
     function rateClass(v) {
@@ -186,6 +224,149 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
       const subjects = SUBJECT_ORDER.filter((subject) => available.has(subject));
       subjects.push(`${xuebu} 汇总`);
       return subjects;
+    }
+
+    function summaryRows(rows, xuebu) {
+      const summarySubject = `${xuebu} 汇总`;
+      return rows.filter((item) => item.xuebu === xuebu && item.subject === summarySubject);
+    }
+
+    function subjectRows(rows, xuebu, subject) {
+      return rows.filter((item) => item.xuebu === xuebu && item.subject === subject);
+    }
+
+    function makeLineDatasets(rows, days, metric, seriesKey, seriesLabel, colorMap) {
+      const seriesNames = [...new Set(rows.map((item) => item[seriesKey]))].sort();
+      return seriesNames.map((name) => {
+        const seriesRows = rows.filter((item) => item[seriesKey] === name);
+        const rateMap = Object.fromEntries(seriesRows.map((row) => [row.date, row[metric]]));
+        const headMap = Object.fromEntries(seriesRows.map((row) => [row.date, row.headcount]));
+        return {
+          label: seriesLabel(name),
+          data: days.map((dt) => {
+            const val = rateMap[dt];
+            return val === null || val === undefined ? null : Math.round(val * 10000) / 100;
+          }),
+          headcounts: days.map((dt) => headMap[dt] ?? null),
+          borderColor: colorMap[name] || "#334155",
+          backgroundColor: colorMap[name] || "#334155",
+          tension: 0.25,
+          spanGaps: true,
+        };
+      });
+    }
+
+    const tooltipCb = {
+      callbacks: {
+        label: function(ctx) {
+          const ds = ctx.dataset;
+          const i = ctx.dataIndex;
+          const head = ds.headcounts ? ds.headcounts[i] : null;
+          if (head === null || head === undefined) {
+            return `${ds.label}: ${ctx.formattedValue}%`;
+          }
+          return `${ds.label}: ${ctx.formattedValue}% (${head}人)`;
+        }
+      }
+    };
+
+    const commonOptions = {
+      responsive: true,
+      plugins: Object.assign({ legend: { position: "bottom" } }, tooltipCb),
+      scales: { y: { min: 0, max: 100 } }
+    };
+
+    function ensureChart(id, labels, datasets) {
+      if (charts[id]) {
+        charts[id].data.labels = labels;
+        charts[id].data.datasets = datasets;
+        charts[id].update();
+        return;
+      }
+      charts[id] = new Chart(document.getElementById(id), {
+        type: "line",
+        data: { labels, datasets },
+        options: commonOptions
+      });
+    }
+
+    function renderXuebuCards(rows) {
+      const container = document.getElementById("weeklyCards");
+      container.innerHTML = XUEBU_ORDER.map((xuebu) => {
+        const segRows = summaryRows(rows, xuebu);
+        const cardCls = XUEBU_CARD_CLS[xuebu] || "";
+        if (!segRows.length) {
+          return `<div class="weekly-card ${cardCls}"><div class="weekly-seg">${xuebu}</div><div class="weekly-kpi">该周暂无数据</div></div>`;
+        }
+        const appAvg = avg(segRows.map((row) => row.app_rate));
+        const pcAvg = avg(segRows.map((row) => row.pc_rate));
+        return `<div class="weekly-card ${cardCls}">
+          <div class="weekly-seg">${xuebu} 汇总</div>
+          <div class="weekly-kpi">风灵app周均值：<span class="kpi-value${kpiClass(appAvg)}">${pct(appAvg)}</span></div>
+          <div class="weekly-kpi">风灵pc周均值：<span class="kpi-value${kpiClass(pcAvg)}">${pct(pcAvg)}</span></div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderSubjectSummary(rows, xuebu) {
+      const subjects = SUBJECT_ORDER.filter((subject) => subjectRows(rows, xuebu, subject).length);
+      if (!subjects.length) return "";
+      const cards = subjects.map((subject) => {
+        const srows = subjectRows(rows, xuebu, subject);
+        const appAvg = avg(srows.map((row) => row.app_rate));
+        const pcAvg = avg(srows.map((row) => row.pc_rate));
+        return `<div class="subject-summary-card">
+          <div class="subject-summary-name">${subject}</div>
+          <div class="weekly-kpi">app周均值：<span class="kpi-value${kpiClass(appAvg)}">${pct(appAvg)}</span></div>
+          <div class="weekly-kpi">pc周均值：<span class="kpi-value${kpiClass(pcAvg)}">${pct(pcAvg)}</span></div>
+        </div>`;
+      }).join("");
+      return `<div class="subject-summary-grid">${cards}</div>`;
+    }
+
+    function destroySubjectCharts() {
+      Object.keys(charts).forEach((id) => {
+        if (id === "appTrend" || id === "pcTrend") return;
+        charts[id].destroy();
+        delete charts[id];
+      });
+    }
+
+    function buildXuebuSection(rows, days, xuebu) {
+      const tableHtml = buildXuebuTable(rows, days, xuebu);
+      if (!tableHtml) return "";
+      const appChartId = `appSubject_${xuebu}`;
+      const pcChartId = `pcSubject_${xuebu}`;
+      const styleMap = { "初中": "segment-chuduan", "高中": "segment-gaoduan", "小学": "segment-xiaoduan" };
+      const colorMap = { "初中": "#3b82f6", "高中": "#f97316", "小学": "#22c55e" };
+      return `
+<section class="segment-block ${styleMap[xuebu] || ""}" style="border-left:8px solid ${colorMap[xuebu] || "#6d28d9"}">
+  <h2 class="segment-name">${xuebu}</h2>
+  <h3 class="section-title">分学科周汇总</h3>
+  ${renderSubjectSummary(rows, xuebu)}
+  <div class="chart-grid subject-chart-grid">
+    <div class="chart-card">
+      <h3 class="chart-title">${xuebu} · 风灵app在线率（分学科）</h3>
+      <canvas id="${appChartId}"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">${xuebu} · 风灵pc在线率（分学科）</h3>
+      <canvas id="${pcChartId}"></canvas>
+    </div>
+  </div>
+  <h3 class="section-title">分学科每日明细</h3>
+  ${tableHtml}
+</section>`;
+    }
+
+    function renderSubjectCharts(rows, days) {
+      const labels = dayLabels(days);
+      XUEBU_ORDER.forEach((xuebu) => {
+        if (!rows.some((item) => item.xuebu === xuebu)) return;
+        const subjectChartRows = rows.filter((item) => item.xuebu === xuebu && !item.subject.endsWith("汇总"));
+        ensureChart(`appSubject_${xuebu}`, labels, makeLineDatasets(subjectChartRows, days, "app_rate", "subject", (name) => name, SUBJECT_COLORS));
+        ensureChart(`pcSubject_${xuebu}`, labels, makeLineDatasets(subjectChartRows, days, "pc_rate", "subject", (name) => name, SUBJECT_COLORS));
+      });
     }
 
     function buildXuebuTable(rows, days, xuebu) {
@@ -212,29 +393,31 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
         });
         bodyRows.push(...ocRows);
       }
-      const styleMap = { "初中": "segment-chuduan", "高中": "segment-gaoduan", "小学": "segment-xiaoduan" };
-      const colorMap = { "初中": "#3b82f6", "高中": "#f97316", "小学": "#22c55e" };
       return `
-<section class="segment-block ${styleMap[xuebu] || ""}" style="border-left:8px solid ${colorMap[xuebu] || "#6d28d9"}">
-  <h2 class="segment-name">${xuebu}</h2>
   <table class="sheet-table changqi-table">
     <thead>
       <tr><th rowspan="2">运营中心</th><th rowspan="2">学科</th>${dateHeaders}</tr>
       <tr>${subHeaders}</tr>
     </thead>
     <tbody>${bodyRows.join("")}</tbody>
-  </table>
-</section>`;
+  </table>`;
     }
 
     function renderWeek(weekStart) {
       const days = weekDays(weekStart);
       const rows = HISTORY.filter((item) => days.includes(item.date));
+      const labels = dayLabels(days);
+      const summaryChartRows = rows.filter((item) => item.subject.endsWith("汇总"));
       document.getElementById("weekSubtitle").textContent = weekLabel(weekStart);
+      renderXuebuCards(rows);
+      ensureChart("appTrend", labels, makeLineDatasets(summaryChartRows, days, "app_rate", "xuebu", (name) => `${name} 汇总`, XUEBU_COLORS));
+      ensureChart("pcTrend", labels, makeLineDatasets(summaryChartRows, days, "pc_rate", "xuebu", (name) => `${name} 汇总`, XUEBU_COLORS));
+      destroySubjectCharts();
       weeklySections.innerHTML = XUEBU_ORDER
         .filter((xuebu) => rows.some((item) => item.xuebu === xuebu))
-        .map((xuebu) => buildXuebuTable(rows, days, xuebu))
+        .map((xuebu) => buildXuebuSection(rows, days, xuebu))
         .join("") || '<p class="dashboard-sub">该周暂无周四至周一数据</p>';
+      renderSubjectCharts(rows, days);
       weekSelect.value = weekStart;
       const idx = WEEK_OPTIONS.indexOf(weekStart);
       prevWeekBtn.disabled = idx < 0 || idx >= WEEK_OPTIONS.length - 1;

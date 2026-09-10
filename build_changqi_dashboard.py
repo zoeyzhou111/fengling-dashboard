@@ -327,6 +327,7 @@ def prepare_changqi_history_records(history: pd.DataFrame) -> List[dict]:
                 "subject": str(row["学科"]),
                 "app_rate": float(row["app_rate"]) if pd.notna(row.get("app_rate")) else None,
                 "pc_rate": float(row["pc_rate"]) if pd.notna(row.get("pc_rate")) else None,
+                "headcount": int(row["headcount"]) if pd.notna(row.get("headcount")) else None,
             }
         )
     return records
@@ -594,6 +595,11 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
 .weekly-query-bar label {{ font-size: 16px; font-weight: 700; color: #334155; }}
 .weekly-query-bar select {{ min-width: 320px; font-size: 15px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; }}
 .weekly-query-btn {{ font-size: 14px; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #1d4ed8; cursor: pointer; }}
+.section-title {{ font-size: 20px; margin: 12px 0 8px; color: #334155; font-weight: 700; }}
+.subject-summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }}
+.subject-summary-card {{ border: 1px solid #dbe2ef; border-radius: 10px; background: #fff; padding: 10px 12px; }}
+.subject-summary-name {{ font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }}
+.subject-chart-grid {{ margin-bottom: 12px; }}
   </style>
   {analytics_head_html(title)}
 </head>
@@ -609,8 +615,20 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
     </div>
     <div class="dashboard-sub" id="weekSubtitle"></div>
     <div class="dashboard-sub">页面版本：{build_stamp}｜不含周二、周三</div>
+    <section class="weekly-grid" id="weeklyCards"></section>
+    <section class="chart-grid">
+      <div class="chart-card">
+        <h3 class="chart-title">风灵app在线率趋势（%）</h3>
+        <canvas id="appTrend"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="chart-title">风灵pc在线率趋势（%）</h3>
+        <canvas id="pcTrend"></canvas>
+      </div>
+    </section>
     <div id="weeklySections"></div>
   </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const HISTORY = {json.dumps(history_records, ensure_ascii=False)};
     const WEEK_OPTIONS = {json.dumps(week_options, ensure_ascii=False)};
@@ -619,7 +637,11 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
     const XUEBU_ORDER = {json.dumps(XUEBU_ORDER, ensure_ascii=False)};
     const SUBJECT_ORDER = {json.dumps(SUBJECT_ORDER, ensure_ascii=False)};
     const WEEKDAY_NAMES = {json.dumps(CHANGQI_WEEKDAY_NAMES, ensure_ascii=False)};
+    const XUEBU_COLORS = {{ "初中": "#3b82f6", "高中": "#f97316", "小学": "#22c55e" }};
+    const SUBJECT_COLORS = {{ "英语": "#3b82f6", "语文": "#8b5cf6", "数学": "#f97316", "物理": "#22c55e", "化学": "#e11d48" }};
+    const XUEBU_CARD_CLS = {{ "初中": "weekly-chuduan1", "高中": "weekly-gaoduan", "小学": "weekly-xiaoduan" }};
 
+    const charts = {{}};
     const weekSelect = document.getElementById("weekSelect");
     const prevWeekBtn = document.getElementById("prevWeekBtn");
     const nextWeekBtn = document.getElementById("nextWeekBtn");
@@ -639,6 +661,10 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
       return Array.from({{ length: 5 }}, (_, i) => addDays(weekStart, i));
     }}
 
+    function dayLabels(days) {{
+      return days.map((dt, idx) => `${{WEEKDAY_NAMES[idx]}}\\n${{dt.slice(5).replace("-", "/")}}`);
+    }}
+
     function weekLabel(weekStart) {{
       const days = weekDays(weekStart);
       let suffix = "";
@@ -650,6 +676,19 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
     function pct(v) {{
       if (v === null || v === undefined || Number.isNaN(v)) return "#N/A";
       return (v * 100).toFixed(2) + "%";
+    }}
+
+    function avg(values) {{
+      const nums = values.filter((v) => v !== null && v !== undefined && !Number.isNaN(v));
+      if (!nums.length) return null;
+      return nums.reduce((a, b) => a + b, 0) / nums.length;
+    }}
+
+    function kpiClass(v) {{
+      if (v === null || v === undefined || Number.isNaN(v)) return "";
+      if (v < 0.5) return " kpi-low";
+      if (v > 0.8) return " kpi-high";
+      return "";
     }}
 
     function rateClass(v) {{
@@ -670,6 +709,149 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
       const subjects = SUBJECT_ORDER.filter((subject) => available.has(subject));
       subjects.push(`${{xuebu}} 汇总`);
       return subjects;
+    }}
+
+    function summaryRows(rows, xuebu) {{
+      const summarySubject = `${{xuebu}} 汇总`;
+      return rows.filter((item) => item.xuebu === xuebu && item.subject === summarySubject);
+    }}
+
+    function subjectRows(rows, xuebu, subject) {{
+      return rows.filter((item) => item.xuebu === xuebu && item.subject === subject);
+    }}
+
+    function makeLineDatasets(rows, days, metric, seriesKey, seriesLabel, colorMap) {{
+      const seriesNames = [...new Set(rows.map((item) => item[seriesKey]))].sort();
+      return seriesNames.map((name) => {{
+        const seriesRows = rows.filter((item) => item[seriesKey] === name);
+        const rateMap = Object.fromEntries(seriesRows.map((row) => [row.date, row[metric]]));
+        const headMap = Object.fromEntries(seriesRows.map((row) => [row.date, row.headcount]));
+        return {{
+          label: seriesLabel(name),
+          data: days.map((dt) => {{
+            const val = rateMap[dt];
+            return val === null || val === undefined ? null : Math.round(val * 10000) / 100;
+          }}),
+          headcounts: days.map((dt) => headMap[dt] ?? null),
+          borderColor: colorMap[name] || "#334155",
+          backgroundColor: colorMap[name] || "#334155",
+          tension: 0.25,
+          spanGaps: true,
+        }};
+      }});
+    }}
+
+    const tooltipCb = {{
+      callbacks: {{
+        label: function(ctx) {{
+          const ds = ctx.dataset;
+          const i = ctx.dataIndex;
+          const head = ds.headcounts ? ds.headcounts[i] : null;
+          if (head === null || head === undefined) {{
+            return `${{ds.label}}: ${{ctx.formattedValue}}%`;
+          }}
+          return `${{ds.label}}: ${{ctx.formattedValue}}% (${{head}}人)`;
+        }}
+      }}
+    }};
+
+    const commonOptions = {{
+      responsive: true,
+      plugins: Object.assign({{ legend: {{ position: "bottom" }} }}, tooltipCb),
+      scales: {{ y: {{ min: 0, max: 100 }} }}
+    }};
+
+    function ensureChart(id, labels, datasets) {{
+      if (charts[id]) {{
+        charts[id].data.labels = labels;
+        charts[id].data.datasets = datasets;
+        charts[id].update();
+        return;
+      }}
+      charts[id] = new Chart(document.getElementById(id), {{
+        type: "line",
+        data: {{ labels, datasets }},
+        options: commonOptions
+      }});
+    }}
+
+    function renderXuebuCards(rows) {{
+      const container = document.getElementById("weeklyCards");
+      container.innerHTML = XUEBU_ORDER.map((xuebu) => {{
+        const segRows = summaryRows(rows, xuebu);
+        const cardCls = XUEBU_CARD_CLS[xuebu] || "";
+        if (!segRows.length) {{
+          return `<div class="weekly-card ${{cardCls}}"><div class="weekly-seg">${{xuebu}}</div><div class="weekly-kpi">该周暂无数据</div></div>`;
+        }}
+        const appAvg = avg(segRows.map((row) => row.app_rate));
+        const pcAvg = avg(segRows.map((row) => row.pc_rate));
+        return `<div class="weekly-card ${{cardCls}}">
+          <div class="weekly-seg">${{xuebu}} 汇总</div>
+          <div class="weekly-kpi">风灵app周均值：<span class="kpi-value${{kpiClass(appAvg)}}">${{pct(appAvg)}}</span></div>
+          <div class="weekly-kpi">风灵pc周均值：<span class="kpi-value${{kpiClass(pcAvg)}}">${{pct(pcAvg)}}</span></div>
+        </div>`;
+      }}).join("");
+    }}
+
+    function renderSubjectSummary(rows, xuebu) {{
+      const subjects = SUBJECT_ORDER.filter((subject) => subjectRows(rows, xuebu, subject).length);
+      if (!subjects.length) return "";
+      const cards = subjects.map((subject) => {{
+        const srows = subjectRows(rows, xuebu, subject);
+        const appAvg = avg(srows.map((row) => row.app_rate));
+        const pcAvg = avg(srows.map((row) => row.pc_rate));
+        return `<div class="subject-summary-card">
+          <div class="subject-summary-name">${{subject}}</div>
+          <div class="weekly-kpi">app周均值：<span class="kpi-value${{kpiClass(appAvg)}}">${{pct(appAvg)}}</span></div>
+          <div class="weekly-kpi">pc周均值：<span class="kpi-value${{kpiClass(pcAvg)}}">${{pct(pcAvg)}}</span></div>
+        </div>`;
+      }}).join("");
+      return `<div class="subject-summary-grid">${{cards}}</div>`;
+    }}
+
+    function destroySubjectCharts() {{
+      Object.keys(charts).forEach((id) => {{
+        if (id === "appTrend" || id === "pcTrend") return;
+        charts[id].destroy();
+        delete charts[id];
+      }});
+    }}
+
+    function buildXuebuSection(rows, days, xuebu) {{
+      const tableHtml = buildXuebuTable(rows, days, xuebu);
+      if (!tableHtml) return "";
+      const appChartId = `appSubject_${{xuebu}}`;
+      const pcChartId = `pcSubject_${{xuebu}}`;
+      const styleMap = {{ "初中": "segment-chuduan", "高中": "segment-gaoduan", "小学": "segment-xiaoduan" }};
+      const colorMap = {{ "初中": "#3b82f6", "高中": "#f97316", "小学": "#22c55e" }};
+      return `
+<section class="segment-block ${{styleMap[xuebu] || ""}}" style="border-left:8px solid ${{colorMap[xuebu] || "#6d28d9"}}">
+  <h2 class="segment-name">${{xuebu}}</h2>
+  <h3 class="section-title">分学科周汇总</h3>
+  ${{renderSubjectSummary(rows, xuebu)}}
+  <div class="chart-grid subject-chart-grid">
+    <div class="chart-card">
+      <h3 class="chart-title">${{xuebu}} · 风灵app在线率（分学科）</h3>
+      <canvas id="${{appChartId}}"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3 class="chart-title">${{xuebu}} · 风灵pc在线率（分学科）</h3>
+      <canvas id="${{pcChartId}}"></canvas>
+    </div>
+  </div>
+  <h3 class="section-title">分学科每日明细</h3>
+  ${{tableHtml}}
+</section>`;
+    }}
+
+    function renderSubjectCharts(rows, days) {{
+      const labels = dayLabels(days);
+      XUEBU_ORDER.forEach((xuebu) => {{
+        if (!rows.some((item) => item.xuebu === xuebu)) return;
+        const subjectChartRows = rows.filter((item) => item.xuebu === xuebu && !item.subject.endsWith("汇总"));
+        ensureChart(`appSubject_${{xuebu}}`, labels, makeLineDatasets(subjectChartRows, days, "app_rate", "subject", (name) => name, SUBJECT_COLORS));
+        ensureChart(`pcSubject_${{xuebu}}`, labels, makeLineDatasets(subjectChartRows, days, "pc_rate", "subject", (name) => name, SUBJECT_COLORS));
+      }});
     }}
 
     function buildXuebuTable(rows, days, xuebu) {{
@@ -696,29 +878,31 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
         }});
         bodyRows.push(...ocRows);
       }}
-      const styleMap = {{ "初中": "segment-chuduan", "高中": "segment-gaoduan", "小学": "segment-xiaoduan" }};
-      const colorMap = {{ "初中": "#3b82f6", "高中": "#f97316", "小学": "#22c55e" }};
       return `
-<section class="segment-block ${{styleMap[xuebu] || ""}}" style="border-left:8px solid ${{colorMap[xuebu] || "#6d28d9"}}">
-  <h2 class="segment-name">${{xuebu}}</h2>
   <table class="sheet-table changqi-table">
     <thead>
       <tr><th rowspan="2">运营中心</th><th rowspan="2">学科</th>${{dateHeaders}}</tr>
       <tr>${{subHeaders}}</tr>
     </thead>
     <tbody>${{bodyRows.join("")}}</tbody>
-  </table>
-</section>`;
+  </table>`;
     }}
 
     function renderWeek(weekStart) {{
       const days = weekDays(weekStart);
       const rows = HISTORY.filter((item) => days.includes(item.date));
+      const labels = dayLabels(days);
+      const summaryChartRows = rows.filter((item) => item.subject.endsWith("汇总"));
       document.getElementById("weekSubtitle").textContent = weekLabel(weekStart);
+      renderXuebuCards(rows);
+      ensureChart("appTrend", labels, makeLineDatasets(summaryChartRows, days, "app_rate", "xuebu", (name) => `${{name}} 汇总`, XUEBU_COLORS));
+      ensureChart("pcTrend", labels, makeLineDatasets(summaryChartRows, days, "pc_rate", "xuebu", (name) => `${{name}} 汇总`, XUEBU_COLORS));
+      destroySubjectCharts();
       weeklySections.innerHTML = XUEBU_ORDER
         .filter((xuebu) => rows.some((item) => item.xuebu === xuebu))
-        .map((xuebu) => buildXuebuTable(rows, days, xuebu))
+        .map((xuebu) => buildXuebuSection(rows, days, xuebu))
         .join("") || '<p class="dashboard-sub">该周暂无周四至周一数据</p>';
+      renderSubjectCharts(rows, days);
       weekSelect.value = weekStart;
       const idx = WEEK_OPTIONS.indexOf(weekStart);
       prevWeekBtn.disabled = idx < 0 || idx >= WEEK_OPTIONS.length - 1;
