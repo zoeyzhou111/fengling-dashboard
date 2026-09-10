@@ -182,11 +182,64 @@ def has_any_offline_slot(app_slot, pc_slot) -> bool:
     return has_offline_slot(app_slot) or has_offline_slot(pc_slot)
 
 
-def format_offline_slot_display(value) -> str:
+def _time_to_minutes(hhmm: str) -> int:
+    hour, minute = map(int, hhmm.split(":"))
+    return hour * 60 + minute
+
+
+def _minutes_to_hhmm(total_minutes: int) -> str:
+    return f"{total_minutes // 60:02d}:{total_minutes % 60:02d}"
+
+
+def _parse_offline_slot(slot: str) -> Optional[Tuple[int, int]]:
+    piece = slot.strip()
+    if not piece or "-" not in piece:
+        return None
+    start_text, end_text = piece.split("-", 1)
+    try:
+        return _time_to_minutes(start_text.strip()), _time_to_minutes(end_text.strip())
+    except ValueError:
+        return None
+
+
+def summarize_offline_slots(value) -> str:
     text = "" if pd.isna(value) else str(value).strip()
     if not text or text == ":-:":
+        return ""
+    parts = [part.strip() for part in text.split(",") if part.strip()]
+    intervals: List[Tuple[int, int]] = []
+    for part in parts:
+        parsed = _parse_offline_slot(part)
+        if parsed is not None:
+            intervals.append(parsed)
+    if not intervals:
+        return text
+    intervals.sort(key=lambda item: item[0])
+    merged: List[Tuple[int, int]] = []
+    cur_start, cur_end = intervals[0]
+    for start, end in intervals[1:]:
+        if start <= cur_end + 1:
+            cur_end = max(cur_end, end)
+        else:
+            merged.append((cur_start, cur_end))
+            cur_start, cur_end = start, end
+    merged.append((cur_start, cur_end))
+    return ",".join(f"{_minutes_to_hhmm(start)}-{_minutes_to_hhmm(end)}" for start, end in merged)
+
+
+def format_offline_slot_display(value) -> str:
+    raw = "" if pd.isna(value) else str(value).strip()
+    if not raw or raw == ":-:":
         return "-"
-    return escape(text).replace(",", ",<br>")
+    summarized = summarize_offline_slots(raw)
+    if not summarized:
+        return "-"
+    ranges = [part.strip() for part in summarized.split(",") if part.strip()]
+    body = ",<br>".join(escape(part) for part in ranges)
+    raw_count = len([part for part in raw.split(",") if part.strip()])
+    if len(ranges) > 1 or raw_count > len(ranges):
+        return f'<span class="slot-summary">共{len(ranges)}段（原{raw_count}个时段）</span><br>{body}'
+    return body
 
 
 def detail_page_styles() -> str:
@@ -205,6 +258,7 @@ body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont,
 .detail-table thead th { background: #0c6cb3; color: #fff; font-weight: 800; white-space: nowrap; }
 .detail-table .col-name { text-align: center; white-space: nowrap; }
 .detail-table .col-slot { text-align: left; white-space: normal; word-break: break-word; font-size: 14px; vertical-align: top; }
+.slot-summary { display: inline-block; margin-bottom: 4px; font-size: 12px; color: #64748b; font-weight: 700; }
 .detail-table .col-rate { white-space: nowrap; }
 .rate-yellow { background: linear-gradient(90deg, #fde89f 0%, #fff9ea 100%); font-weight: 800; }
 .rate-low { color: #b91c1c !important; background: #fee2e2 !important; font-weight: 800; }
