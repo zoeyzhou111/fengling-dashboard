@@ -932,7 +932,8 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
 
 
 def build_main_page(history: pd.DataFrame, latest_date: str) -> str:
-    dates = latest_dates(history)
+    daily_history = history.loc[history["日期"] == latest_date].copy() if latest_date else history.iloc[0:0].copy()
+    dates = [latest_date] if latest_date else []
     build_stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     title = "长期班风灵在线看板（郑州）"
     return f"""
@@ -963,7 +964,7 @@ def build_main_page(history: pd.DataFrame, latest_date: str) -> str:
       <span class="weekly-inline-sep">｜</span>
       <a class="weekly-inline-link" href="长期班风灵在线看板_详情/detail.html">不在线时段明细（点击进入）</a>
     </div>
-    {build_pivot_sections(history, dates)}
+    {build_pivot_sections(daily_history, dates)}
   </div>
 </body>
 </html>
