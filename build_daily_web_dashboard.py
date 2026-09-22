@@ -1156,7 +1156,6 @@ def available_week_starts(history_df: pd.DataFrame, today: date) -> List[str]:
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     df = df.dropna(subset=["date"])
     week_starts = {week_start_for(d.date()).isoformat() for d in df["date"]}
-    week_starts.add(week_start_for(today).isoformat())
     return sorted(week_starts, reverse=True)
 
 
@@ -1183,7 +1182,8 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
 """
     history_records = prepare_history_records(history_df)
     week_options = available_week_starts(history_df, today)
-    default_week = week_start_for(today).isoformat()
+    default_week = week_options[0] if week_options else week_start_for(today).isoformat()
+    today_week = week_start_for(today).isoformat()
     build_stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     seg_headers = "".join([f"<th colspan='3'>{display_segment(seg)}</th>" for seg in segments])
     sub_headers = "".join(["<th>电脑端在线率</th><th>手机端在线率</th><th>不在线人数</th>" for _ in segments])
@@ -1245,7 +1245,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
     const SEGMENT_KEYS = {json.dumps(SEGMENT_KEYS, ensure_ascii=False)};
     const SEGMENT_LABELS = {json.dumps({seg: display_segment(seg) for seg in segments}, ensure_ascii=False)};
     const SEG_COLORS = {json.dumps({"初短一部": "#ef4444", "初短二部": "#8b5cf6", "初短三部": "#0891b2", "郑州特战队": "#e11d48", "小短": "#22c55e", "高短": "#f59e0b"}, ensure_ascii=False)};
-    const TODAY_WEEK = {json.dumps(default_week, ensure_ascii=False)};
+    const TODAY_WEEK = {json.dumps(today_week, ensure_ascii=False)};
 
     const charts = {{}};
     const weekSelect = document.getElementById("weekSelect");
@@ -1459,11 +1459,10 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
 
 
 def write_weekly_dashboard(history_df: pd.DataFrame, date_text: str) -> None:
-    page_date = parse_date_text(date_text) if date_text else date.today()
     WEEKLY_HUB_HTML.write_text(
         build_weekly_page(
             history_df,
-            page_date,
+            date.today(),
             SEGMENTS,
             title="周维度在线率看板（郑州）",
             back_href="每日三表汇总看板.html",

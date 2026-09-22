@@ -339,7 +339,6 @@ def available_changqi_week_starts(history: pd.DataFrame, today: date) -> List[st
         return [changqi_week_start(today).isoformat()]
     dt = pd.to_datetime(weekly["日期"], errors="coerce").dropna()
     week_starts = {changqi_week_start(value.date()).isoformat() for value in dt}
-    week_starts.add(changqi_week_start(today).isoformat())
     return sorted(week_starts, reverse=True)
 
 
@@ -570,9 +569,10 @@ def build_detail_page(detail: pd.DataFrame, latest_date: str) -> str:
 
 def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
     weekly_history = filter_weekly_history(history)
-    today = datetime.strptime(latest_date, "%Y-%m-%d").date() if latest_date else date.today()
+    today = date.today()
     week_options = available_changqi_week_starts(weekly_history, today)
-    default_week = changqi_week_start(today).isoformat()
+    default_week = week_options[0] if week_options else changqi_week_start(today).isoformat()
+    today_week = changqi_week_start(today).isoformat()
     history_records = prepare_changqi_history_records(weekly_history)
     build_stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     title = "长期班周维度在线率看板（郑州）"
@@ -633,7 +633,7 @@ def build_weekly_page(history: pd.DataFrame, latest_date: str) -> str:
     const HISTORY = {json.dumps(history_records, ensure_ascii=False)};
     const WEEK_OPTIONS = {json.dumps(week_options, ensure_ascii=False)};
     const DEFAULT_WEEK = {json.dumps(default_week, ensure_ascii=False)};
-    const TODAY_WEEK = {json.dumps(default_week, ensure_ascii=False)};
+    const TODAY_WEEK = {json.dumps(today_week, ensure_ascii=False)};
     const XUEBU_ORDER = {json.dumps(XUEBU_ORDER, ensure_ascii=False)};
     const SUBJECT_ORDER = {json.dumps(SUBJECT_ORDER, ensure_ascii=False)};
     const WEEKDAY_NAMES = {json.dumps(CHANGQI_WEEKDAY_NAMES, ensure_ascii=False)};
