@@ -51,10 +51,117 @@ run_cmd() {
 }
 
 echo "== Step 0: resolve latest source files =="
-SALES_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "销售风灵在线率明细数据_")"
+SALES_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "销售风灵在线率明细数据_" 2>/dev/null || true)"
+if [[ -z "${SALES_FILE:-}" ]]; then
+  SALES_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "学习规划师风灵在线率明细数据_")"
+fi
 AUTH_HIGH_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "爱芯个微授权数据_")"
 AUTH_AIXUE_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "爱芯个微授权数据_爱学_")"
 WECHAT_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "风灵个微在线数据_")"
+
+MERGE_CACHE_DIR="$ROOT_DIR/.merge_cache"
+mkdir -p "$MERGE_CACHE_DIR"
+WECHAT_FILE="$(python3 - "$DOWNLOADS_DIR" "$MERGE_CACHE_DIR" "$WECHAT_FILE" <<'PY'
+import sys
+from pathlib import Path
+import pandas as pd
+
+downloads = Path(sys.argv[1]).expanduser()
+cache = Path(sys.argv[2])
+fallback = Path(sys.argv[3])
+
+def is_tezhan_only(path: Path) -> bool:
+    try:
+        df = pd.read_excel(path, sheet_name="风灵个微在线率明细数据", usecols=["运营中心"])
+    except Exception:
+        return False
+    oc = df["运营中心"].astype(str)
+    if oc.empty:
+        return False
+    return oc.str.contains("特战", na=False).mean() > 0.95
+
+def merge_wechat(full: Path, patch: Path, out: Path) -> None:
+    detail_sheet = "风灵个微在线率明细数据"
+    df_f = pd.read_excel(full, sheet_name=detail_sheet)
+    df_p = pd.read_excel(patch, sheet_name=detail_sheet)
+    oc = df_f.get("运营中心", pd.Series("", index=df_f.index)).astype(str)
+    merged = pd.concat([df_f.loc[~oc.str.contains("特战", na=False)], df_p], ignore_index=True)
+    with pd.ExcelWriter(out, engine="openpyxl") as w:
+        merged.to_excel(w, sheet_name=detail_sheet, index=False)
+        xfull = pd.ExcelFile(full)
+        if "风灵微信在线率汇总数据" in xfull.sheet_names:
+            sumdf = pd.read_excel(full, sheet_name="风灵微信在线率汇总数据")
+            oc2 = sumdf.get("运营中心", pd.Series("", index=sumdf.index)).astype(str)
+            sumdf = sumdf.loc[~oc2.str.contains("特战", na=False)]
+            xpatch = pd.ExcelFile(patch)
+            if "风灵微信在线率汇总数据" in xpatch.sheet_names:
+                sum_p = pd.read_excel(patch, sheet_name="风灵微信在线率汇总数据")
+                sumdf = pd.concat([sumdf, sum_p], ignore_index=True)
+            sumdf.to_excel(w, sheet_name="风灵微信在线率汇总数据", index=False)
+
+files = sorted(downloads.glob("风灵个微在线数据_*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True)
+if not files:
+    print(fallback)
+    raise SystemExit(0)
+latest = files[0]
+if not is_tezhan_only(latest):
+    print(latest)
+    raise SystemExit(0)
+full = next((p for p in files[1:] if not is_tezhan_only(p)), None)
+if full is None:
+    print(latest)
+    raise SystemExit(0)
+out = cache / "merged_wechat.xlsx"
+merge_wechat(full, latest, out)
+print(out)
+PY
+)"
+
+AUTH_AIXUE_FILE="$(python3 - "$DOWNLOADS_DIR" "$MERGE_CACHE_DIR" "$AUTH_AIXUE_FILE" <<'PY'
+import sys
+from pathlib import Path
+import pandas as pd
+
+downloads = Path(sys.argv[1]).expanduser()
+cache = Path(sys.argv[2])
+fallback = Path(sys.argv[3])
+
+def is_tezhan_only(path: Path) -> bool:
+    try:
+        df = pd.read_excel(path, sheet_name="个微授权明细数据", usecols=["运营中心"])
+    except Exception:
+        return False
+    oc = df["运营中心"].astype(str)
+    if oc.empty:
+        return False
+    return oc.str.contains("特战", na=False).mean() > 0.95
+
+def merge_auth(full: Path, patch: Path, out: Path) -> None:
+    sheet = "个微授权明细数据"
+    df_f = pd.read_excel(full, sheet_name=sheet)
+    df_p = pd.read_excel(patch, sheet_name=sheet)
+    oc = df_f.get("运营中心", pd.Series("", index=df_f.index)).astype(str)
+    merged = pd.concat([df_f.loc[~oc.str.contains("特战", na=False)], df_p], ignore_index=True)
+    with pd.ExcelWriter(out, engine="openpyxl") as w:
+        merged.to_excel(w, sheet_name=sheet, index=False)
+
+files = sorted(downloads.glob("爱芯个微授权数据_爱学_*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True)
+if not files:
+    print(fallback)
+    raise SystemExit(0)
+latest = files[0]
+if not is_tezhan_only(latest):
+    print(latest)
+    raise SystemExit(0)
+full = next((p for p in files[1:] if not is_tezhan_only(p)), None)
+if full is None:
+    print(latest)
+    raise SystemExit(0)
+out = cache / "merged_auth_aixue.xlsx"
+merge_auth(full, latest, out)
+print(out)
+PY
+)"
 
 if [[ "$AUTH_HIGH_FILE" == *"爱学"* ]]; then
   AUTH_HIGH_FILE="$(python3 - "$DOWNLOADS_DIR" <<'PY'

@@ -126,6 +126,80 @@ def normalize_team_name(v):
     return s
 
 
+TEZHAN_STAGE_TEAM_PATTERN = r"先锋|星火"
+
+
+def stage_value_is_tezhan_team_name(value) -> bool:
+    s = str(value or "").strip()
+    if not s or s == "nan":
+        return False
+    if s == "B站":
+        return True
+    return bool(pd.Series([s]).str.contains(TEZHAN_STAGE_TEAM_PATTERN, regex=True).iloc[0])
+
+
+def fix_tezhan_mislabeled_grade_team(df: pd.DataFrame) -> pd.DataFrame:
+    """特战团授权导出常把战队名写在「阶段」列；normalize 后勿当成年级。"""
+    if df.empty or "运营中心" not in df.columns:
+        return df
+    out = df.copy()
+    oc = out["运营中心"].astype(str).map(normalize_operation_center)
+    tezhan = oc.eq("郑州特战队")
+    if not tezhan.any() or "阶段" not in out.columns:
+        return out
+    stage = out["阶段"].map(stage_value_is_tezhan_team_name)
+    mask = tezhan & stage
+    if not mask.any():
+        return out
+    if "战队" not in out.columns:
+        out["战队"] = np.nan
+    team = out["战队"].astype(str).str.strip()
+    empty_team = out["战队"].isna() | team.eq("") | team.eq("nan")
+    out.loc[mask & empty_team, "战队"] = out.loc[mask & empty_team, "阶段"].astype(str).str.strip()
+    if "年级" in out.columns:
+        grade = out["年级"].astype(str).str.strip()
+        wrong = tezhan & grade.map(stage_value_is_tezhan_team_name)
+        out.loc[wrong, "年级"] = np.nan
+    return out
+
+
+def align_tezhan_auth_from_sales(auth: pd.DataFrame, sales: pd.DataFrame) -> pd.DataFrame:
+    """按邮箱把特战团授权的年级/战队与销售明细对齐，保证 join 键一致。"""
+    if auth.empty or sales.empty or "运营中心" not in auth.columns:
+        return auth
+    out = auth.copy()
+    oc_auth = out["运营中心"].astype(str).map(normalize_operation_center)
+    if not oc_auth.eq("郑州特战队").any():
+        return out
+    s = sales.copy()
+    if "运营中心" in s.columns:
+        s["运营中心"] = s["运营中心"].map(normalize_operation_center)
+    s = s[s["运营中心"].eq("郑州特战队")]
+    if s.empty or "销售邮箱" not in s.columns:
+        return out
+    email_auth = None
+    for c in ("辅导邮箱", "辅导老师邮箱", "老师邮箱", "学习规划师邮箱"):
+        if c in out.columns:
+            email_auth = c
+            break
+    if email_auth is None:
+        return out
+    s = s.copy()
+    s["__email"] = s["销售邮箱"].astype(str).str.strip().str.lower()
+    s = s[s["__email"].ne("") & s["__email"].ne("nan")]
+    lookup = s.groupby("__email", as_index=False).agg(年级=("年级", "first"), 战队=("战队", "first"))
+    lookup_map = lookup.set_index("__email")
+    emails = out[email_auth].astype(str).str.strip().str.lower()
+    for idx in out.index[oc_auth.eq("郑州特战队")]:
+        em = emails.at[idx]
+        if not em or em == "nan" or em not in lookup_map.index:
+            continue
+        row = lookup_map.loc[em]
+        out.at[idx, "年级"] = row["年级"]
+        out.at[idx, "战队"] = row["战队"]
+    return out
+
+
 def fill_team_for_special_units(df: pd.DataFrame) -> pd.DataFrame:
     """郑州特战队导出里战队常为空，用老师姓名补战队以便汇总。"""
     if df.empty or "战队" not in df.columns or "运营中心" not in df.columns:
@@ -288,6 +362,8 @@ def norm_school(grade, src=None, xuebu=None):
     if g.startswith("高"):
         return "高中"
     if g.startswith("初"):
+        return "初中"
+    if g == "B站":
         return "初中"
     if isinstance(xuebu_norm, str):
         if xuebu_norm == "高中":
@@ -872,13 +948,15 @@ def load_and_prepare(
     auth_h["分组"] = [assign_segment("郑州", "高中", g) for g in auth_h["年级"]]
 
     auth_a = normalize_auth_export(pd.read_excel(auth_aixue_path, sheet_name="个微授权明细数据"), "爱学")
+    if "运营中心" in auth_a.columns:
+        auth_a["运营中心"] = auth_a["运营中心"].map(normalize_operation_center)
+    auth_a = fix_tezhan_mislabeled_grade_team(auth_a)
     auth_a = apply_grade_labels(auth_a)
     auth_a = remove_xinghuo_grade_rows(auth_a, "年级")
     auth_a = apply_team_grade_override(auth_a, "战队", "年级")
     auth_a = remove_xinghuo_team_rows(auth_a, "战队")
-    if "运营中心" in auth_a.columns:
-        auth_a["运营中心"] = auth_a["运营中心"].map(normalize_operation_center)
     auth_a["战队"] = auth_a["战队"].map(normalize_team_name)
+    auth_a = align_tezhan_auth_from_sales(auth_a, sales)
     auth_a = fill_team_for_special_units(auth_a)
     auth_a["小时"] = pd.to_numeric(auth_a.get("小时"), errors="coerce")
     auth_a["sys_source"] = "爱学"
@@ -1246,12 +1324,22 @@ def main():
         wechat_path=Path(args.wechat),
         auth_aixue_path=Path(args.auth_aixue),
     )
-    if args.as_of_date:
-        bundle = filter_bundle_by_date(bundle, args.as_of_date)
+    as_of = (args.as_of_date or "").strip()
+    if not as_of:
+        candidates = []
+        for frame in (bundle.sales, bundle.wechat_detail, bundle.auth_detail):
+            if "日期" in frame.columns and not frame.empty:
+                candidates.append(pd.to_datetime(frame["日期"], errors="coerce").max())
+        if candidates:
+            latest = max(d for d in candidates if pd.notna(d))
+            as_of = latest.strftime("%Y-%m-%d")
+            print(f"默认使用最新业务日: {as_of}")
+    if as_of:
+        bundle = filter_bundle_by_date(bundle, as_of)
         if bundle.sales.empty and bundle.auth_detail.empty and bundle.wechat_detail.empty:
-            raise SystemExit(f"指定日期无任何数据: {args.as_of_date}")
+            raise SystemExit(f"指定日期无任何数据: {as_of}")
         if bundle.sales.empty:
-            print(f"警告：{args.as_of_date} 无销售数据，将仅基于授权/个微数据生成。")
+            print(f"警告：{as_of} 无销售数据，将仅基于授权/个微数据生成。")
 
     dt = pd.to_datetime(bundle.sales.get("日期"), errors="coerce").max()
     date_text = f"{dt.month}月{dt.day}日" if pd.notna(dt) else ""

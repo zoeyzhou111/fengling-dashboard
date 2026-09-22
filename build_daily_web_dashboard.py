@@ -575,8 +575,14 @@ def pick_overall_summary_row(df: pd.DataFrame, total_col: str) -> pd.Series | No
     if s.empty:
         return None
     s[total_col] = pd.to_numeric(s[total_col], errors="coerce").fillna(0)
-    s = s.sort_values(total_col, ascending=False)
-    return s.iloc[0]
+    grade_label = s["年级"].astype(str)
+    school_label = s["学部"].astype(str) if "学部" in s.columns else pd.Series("", index=s.index)
+    s["_summary_prio"] = 0
+    s.loc[grade_label.str.contains("其他", na=False), "_summary_prio"] = -2
+    s.loc[school_label.str.contains("其他", na=False), "_summary_prio"] = -1
+    s.loc[school_label.str.contains("初中", na=False) | grade_label.str.contains("初中", na=False), "_summary_prio"] = 1
+    s = s.sort_values(["_summary_prio", total_col], ascending=[False, False])
+    return s.drop(columns=["_summary_prio"], errors="ignore").iloc[0]
 
 
 def fill_group_cols(df: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
