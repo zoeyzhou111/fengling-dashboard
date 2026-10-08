@@ -5,7 +5,7 @@ import hashlib
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 from html import escape
 
 import pandas as pd
@@ -291,12 +291,22 @@ def _grade_order_key(grade_value: object) -> int:
     base = grade.replace("汇总", "")
     order_map = {
         "新兵营": 1,
-        "高一": 2,
-        "高二": 3,
-        "高三": 4,
-        "高中": 5,
+        "新兵营-郑州二部": 1,
+        "一军团": 2,
+        "红二军团": 3,
+        "高一": 4,
+        "高二": 5,
+        "高三": 6,
+        "高中": 7,
     }
     return order_map.get(base, 99)
+
+
+def gaoduan_allowed_grades(segment: str) -> Set[str]:
+    base = {"新兵营", "高一", "高二", "高三"}
+    if segment == "高短二部":
+        return base | {"一军团", "红二军团", "新兵营-郑州二部"}
+    return base
 
 
 def sort_gaoduan_auth_sales(df: pd.DataFrame, segment: str = "高短一部") -> pd.DataFrame:
@@ -586,7 +596,9 @@ def is_summary_row(series: pd.Series) -> bool:
     return ("汇总" in grade) or ("汇总" in team)
 
 
-def pick_overall_summary_row(df: pd.DataFrame, total_col: str) -> pd.Series | None:
+def pick_overall_summary_row(
+    df: pd.DataFrame, total_col: str, segment: str | None = None
+) -> pd.Series | None:
     if df.empty:
         return None
     s = df.copy()
@@ -600,6 +612,14 @@ def pick_overall_summary_row(df: pd.DataFrame, total_col: str) -> pd.Series | No
     s.loc[grade_label.str.contains("其他", na=False), "_summary_prio"] = -2
     s.loc[school_label.str.contains("其他", na=False), "_summary_prio"] = -1
     s.loc[school_label.str.contains("初中", na=False) | grade_label.str.contains("初中", na=False), "_summary_prio"] = 1
+    if segment:
+        seg_label = display_segment(segment)
+        seg_overall = grade_label.str.contains(seg_label, na=False) & grade_label.str.contains("汇总", na=False)
+        if "学部" in s.columns:
+            seg_overall = seg_overall | (
+                school_label.str.strip().eq(segment) & grade_label.str.contains("汇总", na=False)
+            )
+        s.loc[seg_overall, "_summary_prio"] = 3
     s = s.sort_values(["_summary_prio", total_col], ascending=[False, False])
     return s.drop(columns=["_summary_prio"], errors="ignore").iloc[0]
 
@@ -1832,7 +1852,7 @@ def main(as_of_date: str = "") -> None:
 
         if segment in GAODUAN_SEGMENTS and not sales.empty:
             # Keep only expected grades for 高短 bad list; removes anomalies like 六年级.
-            allowed_high_grades = {"新兵营", "高一", "高二", "高三"}
+            allowed_high_grades = gaoduan_allowed_grades(segment)
             bad["__grade_clean"] = (
                 bad["年级"]
                 .astype(str)
@@ -1874,8 +1894,8 @@ def main(as_of_date: str = "") -> None:
             if not valid_date.empty:
                 all_dates.append(str(valid_date.max()))
 
-        auth_sum = pick_overall_summary_row(auth, "接流")
-        sales_sum = pick_overall_summary_row(sales, "接流人数")
+        auth_sum = pick_overall_summary_row(auth, "接流", segment)
+        sales_sum = pick_overall_summary_row(sales, "接流人数", segment)
 
         auth_rate_value = safe_float(auth_sum["爱芯个微授权率"]) if auth_sum is not None else None
         auth_num = safe_float(auth_sum["授权人数"]) if auth_sum is not None else None
