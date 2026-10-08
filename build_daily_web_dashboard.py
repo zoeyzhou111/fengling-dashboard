@@ -286,18 +286,22 @@ def segment_chart_colors(segments: List[str]) -> Dict[str, str]:
     return {seg: palette.get(seg, "#64748b") for seg in segments}
 
 
-def _grade_order_key(grade_value: object) -> int:
+def _grade_order_key(grade_value: object, segment: str | None = None) -> int:
     grade = str(grade_value or "").strip().replace(" ", "")
-    base = grade.replace("汇总", "")
+    base = grade.replace("汇总", "").strip()
+    if segment == "高短二部":
+        order_map = {
+            "一军团": 1,
+            "红二军团": 2,
+            "新兵营-郑州二部": 3,
+        }
+        return order_map.get(base, 99)
     order_map = {
         "新兵营": 1,
-        "新兵营-郑州二部": 1,
-        "一军团": 2,
-        "红二军团": 3,
-        "高一": 4,
-        "高二": 5,
-        "高三": 6,
-        "高中": 7,
+        "高一": 2,
+        "高二": 3,
+        "高三": 4,
+        "高中": 5,
     }
     return order_map.get(base, 99)
 
@@ -348,7 +352,7 @@ def sort_gaoduan_auth_sales(df: pd.DataFrame, segment: str = "高短一部") -> 
     kind_order = {"detail": 0, "grade_summary": 1, "overall_summary": 2}
     rows.sort(
         key=lambda x: (
-            _grade_order_key(x["__grade"]),
+            _grade_order_key(x["__grade"], segment),
             kind_order.get(x["__kind"], 9),
             x["__idx"],
         )
@@ -365,9 +369,9 @@ def sort_gaoduan_auth_sales(df: pd.DataFrame, segment: str = "高短一部") -> 
     return pd.DataFrame(out, columns=df.columns)
 
 
-def sort_gaoduan_bad(df: pd.DataFrame) -> pd.DataFrame:
+def sort_gaoduan_bad(df: pd.DataFrame, segment: str = "高短一部") -> pd.DataFrame:
     data = df.copy()
-    data["__grade_order"] = data["年级"].apply(_grade_order_key)
+    data["__grade_order"] = data["年级"].apply(lambda g: _grade_order_key(g, segment))
     data["__team_text"] = data["战队"].fillna("").astype(str)
     data["__name_text"] = data["辅导姓名"].fillna("").astype(str)
     data = data.sort_values(
@@ -1878,8 +1882,8 @@ def main(as_of_date: str = "") -> None:
                     roster.loc[roster_mask, "年级"] = "高二"
             auth = sort_gaoduan_auth_sales(auth, segment)
             sales = sort_gaoduan_auth_sales(sales, segment)
-            bad = sort_gaoduan_bad(bad)
-            roster = sort_gaoduan_bad(roster)
+            bad = sort_gaoduan_bad(bad, segment)
+            roster = sort_gaoduan_bad(roster, segment)
 
         if "日期" in bad_origin.columns:
             valid_date = bad_origin["日期"].dropna()
