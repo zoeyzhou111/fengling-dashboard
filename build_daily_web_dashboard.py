@@ -15,6 +15,7 @@ from generate_daily_reports import (
     SEGMENT_GROUPS,
     SEGMENT_KEYS,
     SEGMENT_DISPLAY_NAMES,
+    GAODUAN_SEGMENTS,
     display_segment,
     expand_with_summary,
     norm_school,
@@ -271,6 +272,20 @@ def load_auth_table(auth_file: Path) -> pd.DataFrame:
     return pd.read_excel(auth_file, sheet_name="数据公示表", header=1).dropna(how="all")
 
 
+def segment_chart_colors(segments: List[str]) -> Dict[str, str]:
+    palette = {
+        "初短一部": "#ef4444",
+        "初短二部": "#8b5cf6",
+        "初短三部": "#0891b2",
+        "郑州特战队": "#e11d48",
+        "小短": "#22c55e",
+        "高短一部": "#f59e0b",
+        "高短二部": "#ea580c",
+        "高短": "#f59e0b",
+    }
+    return {seg: palette.get(seg, "#64748b") for seg in segments}
+
+
 def _grade_order_key(grade_value: object) -> int:
     grade = str(grade_value or "").strip().replace(" ", "")
     base = grade.replace("汇总", "")
@@ -284,7 +299,7 @@ def _grade_order_key(grade_value: object) -> int:
     return order_map.get(base, 99)
 
 
-def sort_gaoduan_auth_sales(df: pd.DataFrame) -> pd.DataFrame:
+def sort_gaoduan_auth_sales(df: pd.DataFrame, segment: str = "高短一部") -> pd.DataFrame:
     data = df.copy().reset_index(drop=True)
     rows = []
     current_grade = ""
@@ -296,7 +311,11 @@ def sort_gaoduan_auth_sales(df: pd.DataFrame) -> pd.DataFrame:
         is_summary = ("汇总" in grade_raw) or ("汇总" in team_raw)
         if is_summary:
             grade_base = grade_raw.replace("汇总", "").strip() if grade_raw else current_grade
-            kind = "overall_summary" if grade_base == "高短" else "grade_summary"
+            kind = (
+                "overall_summary"
+                if grade_base in (segment, "高短", display_segment(segment))
+                else "grade_summary"
+            )
             logical_grade = grade_base
         else:
             logical_grade = grade_raw if (grade_raw and grade_raw.lower() != "nan") else current_grade
@@ -331,7 +350,7 @@ def sort_gaoduan_auth_sales(df: pd.DataFrame) -> pd.DataFrame:
         if item["__kind"] == "grade_summary":
             row["年级"] = f'{item["__grade"]} 汇总'
         elif item["__kind"] == "overall_summary":
-            row["年级"] = "高短 汇总"
+            row["年级"] = f"{display_segment(segment)} 汇总"
         out.append(row)
     return pd.DataFrame(out, columns=df.columns)
 
@@ -920,6 +939,8 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .segment-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 8px solid #e11d48; }
 .segment-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 8px solid #22c55e; }
 .segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
+.segment-gaoduan1 { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f59e0b; }
+.segment-gaoduan2 { background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%); border-left: 8px solid #ea580c; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .card-link { text-decoration: none; color: inherit; display: block; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; padding: 12px; transition: .2s; min-height: 134px; }
@@ -950,6 +971,8 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .weekly-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 6px solid #e11d48; }
 .weekly-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 6px solid #22c55e; }
 .weekly-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f97316; }
+.weekly-gaoduan1 { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f59e0b; }
+.weekly-gaoduan2 { background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%); border-left: 6px solid #ea580c; }
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
 .kpi-value { font-weight: 800; color: #0f172a; }
@@ -1250,7 +1273,7 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
     const SEGMENTS = {json.dumps(segments, ensure_ascii=False)};
     const SEGMENT_KEYS = {json.dumps(SEGMENT_KEYS, ensure_ascii=False)};
     const SEGMENT_LABELS = {json.dumps({seg: display_segment(seg) for seg in segments}, ensure_ascii=False)};
-    const SEG_COLORS = {json.dumps({"初短一部": "#ef4444", "初短二部": "#8b5cf6", "初短三部": "#0891b2", "郑州特战队": "#e11d48", "小短": "#22c55e", "高短": "#f59e0b"}, ensure_ascii=False)};
+    const SEG_COLORS = {json.dumps(segment_chart_colors(segments), ensure_ascii=False)};
     const TODAY_WEEK = {json.dumps(today_week, ensure_ascii=False)};
 
     const charts = {{}};
@@ -1523,7 +1546,7 @@ def build_daily_hub_page(date_text: str) -> str:
       </a>
       <a class="hub-card hub-gaoduan" href="每日三表汇总看板-高中.html">
         <h2 class="hub-card-title">高中看板</h2>
-        <p class="hub-card-desc">小短 · 高短</p>
+        <p class="hub-card-desc">小短 · 高短一部 · 高短二部</p>
       </a>
     </div>
   </div>
@@ -1555,7 +1578,7 @@ def build_weekly_hub_page() -> str:
       </a>
       <a class="hub-card hub-gaoduan" href="周维度在线率看板-高中.html">
         <h2 class="hub-card-title">高中周维度</h2>
-        <p class="hub-card-desc">小短 · 高短</p>
+        <p class="hub-card-desc">小短 · 高短一部 · 高短二部</p>
       </a>
     </div>
   </div>
@@ -1581,7 +1604,8 @@ def build_daily_dashboard_page(
         "初短三部": "segment-chuduan3",
         "郑州特战队": "segment-tezhan",
         "小短": "segment-xiaoduan",
-        "高短": "segment-gaoduan",
+        "高短一部": "segment-gaoduan1",
+        "高短二部": "segment-gaoduan2",
     }
     for segment in segments:
         row = row_map.get(segment)
@@ -1711,7 +1735,7 @@ def main(as_of_date: str = "") -> None:
             sales = sales.dropna(how="all")
             bad = bad.dropna(how="all")
 
-            if segment == "高短":
+            if segment in GAODUAN_SEGMENTS:
                 sales = remove_wrong_grade_duplicates(sales, GAODUAN_TEAM_GRADE_FIX)
 
             bad = bad[
@@ -1806,7 +1830,7 @@ def main(as_of_date: str = "") -> None:
             roster["个微在线率"] = pd.to_numeric(roster["个微在线率"], errors="coerce")
             roster = roster.drop_duplicates(subset=["学部", "年级", "战队", "辅导姓名"], keep="first")
 
-        if segment == "高短" and not sales.empty:
+        if segment in GAODUAN_SEGMENTS and not sales.empty:
             # Keep only expected grades for 高短 bad list; removes anomalies like 六年级.
             allowed_high_grades = {"新兵营", "高一", "高二", "高三"}
             bad["__grade_clean"] = (
@@ -1821,7 +1845,7 @@ def main(as_of_date: str = "") -> None:
             removed_cnt = before_cnt - len(bad)
             bad = bad.drop(columns=["__grade_clean"])
             if removed_cnt > 0:
-                print(f"[校验] 高短不在线名单已移除异常年级行: {removed_cnt}")
+                print(f"[校验] {segment} 不在线名单已移除异常年级行: {removed_cnt}")
 
             # For auth/sales: only relocate this one team during render sorting.
             # For bad list: write back grade directly since all rows are detail rows.
@@ -1832,8 +1856,8 @@ def main(as_of_date: str = "") -> None:
                 roster_mask = roster["战队"].astype(str).str.strip().eq(team_name)
                 if roster_mask.any():
                     roster.loc[roster_mask, "年级"] = "高二"
-            auth = sort_gaoduan_auth_sales(auth)
-            sales = sort_gaoduan_auth_sales(sales)
+            auth = sort_gaoduan_auth_sales(auth, segment)
+            sales = sort_gaoduan_auth_sales(sales, segment)
             bad = sort_gaoduan_bad(bad)
             roster = sort_gaoduan_bad(roster)
 

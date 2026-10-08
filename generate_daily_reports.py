@@ -17,8 +17,9 @@ from openpyxl.utils import get_column_letter, range_boundaries
 
 SEGMENT_GROUPS = {
     "初中": ["初短一部", "初短二部", "初短三部", "郑州特战队"],
-    "高中": ["小短", "高短"],
+    "高中": ["小短", "高短一部", "高短二部"],
 }
+GAODUAN_SEGMENTS = frozenset({"高短一部", "高短二部"})
 SEGMENTS = [seg for group in SEGMENT_GROUPS.values() for seg in group]
 CHUDUAN_SEGMENTS = set(SEGMENT_GROUPS["初中"])
 GRADE_LABEL_MAP = {
@@ -36,7 +37,8 @@ SEGMENT_KEYS = {
     "初短三部": "chuduan3",
     "郑州特战队": "tezhan",
     "小短": "xiaoduan",
-    "高短": "gaoduan",
+    "高短一部": "gaoduan1",
+    "高短二部": "gaoduan2",
 }
 SEGMENT_DISPLAY_NAMES = {
     "郑州特战队": "郑州特战团",
@@ -377,9 +379,13 @@ def assign_segment(oc, src, grade=None):
     oc = normalize_operation_center(oc)
     src = normalize_wechat_source(src)
     g = normalize_grade_label(grade)
-    # 高中/高阶：即使运营中心挂在郑州一部/二部，也归高短
+    # 高阶/高中：按运营中心拆成高短一部（郑州一部）、高短二部（郑州二部）
     if is_high_school_context(src, g):
-        return "高短"
+        if oc == "郑州一部":
+            return "高短一部"
+        if oc == "郑州二部":
+            return "高短二部"
+        return "其他"
     if oc in ("郑州三部",):
         return "初短三部"
     if oc == "郑州特战队":
@@ -389,10 +395,9 @@ def assign_segment(oc, src, grade=None):
     if oc == "郑州二部":
         return "初短二部"
     if oc == "郑州":
-        # 新规则：郑州中心仅全年级/全部归小短，其余郑州全部归高短
         if g in ("全年级", "全部"):
             return "小短"
-        return "高短"
+        return "其他"
     return "其他"
 
 
@@ -944,8 +949,13 @@ def load_and_prepare(
     auth_h["老师邮箱"] = auth_h["辅导老师邮箱"]
     auth_h["老师姓名"] = auth_h["辅导名字"]
     auth_h["学部"] = [norm_school(g, "高中", x) for g, x in zip(auth_h["年级"], auth_h["学部"])]
-    # 高中授权导出里运营中心可能标成郑州一部，但口径仍按郑州高短划分
-    auth_h["分组"] = [assign_segment("郑州", "高中", g) for g in auth_h["年级"]]
+    if "运营中心" in auth_h.columns:
+        auth_h["运营中心"] = auth_h["运营中心"].map(normalize_operation_center)
+    else:
+        auth_h["运营中心"] = "郑州"
+    auth_h["分组"] = [
+        assign_segment(o, "高中", g) for o, g in zip(auth_h["运营中心"], auth_h["年级"])
+    ]
 
     auth_a = normalize_auth_export(pd.read_excel(auth_aixue_path, sheet_name="个微授权明细数据"), "爱学")
     if "运营中心" in auth_a.columns:
@@ -983,10 +993,10 @@ def build_metrics(bundle: DataBundle, segment: str):
 
     # 业务约束：高短不允许出现“初中/小学”学部标签，统一归并到高短
     # 这样可避免高短中出现“初中 汇总”等中间汇总行导致口径错乱。
-    if segment == "高短":
+    if segment in GAODUAN_SEGMENTS:
         for df in (sales, wechat_sum, wechat_detail, auth):
             if "学部" in df.columns:
-                df["学部"] = "高短"
+                df["学部"] = segment
 
     keys = ["学部", "年级", "战队"]
 
@@ -1350,11 +1360,14 @@ def main():
         generate_segment_reports(bundle, seg, output_root / seg, date_text)
 
     # 高短数据检阅：不得出现“初中”学部字段
-    _, _, _, _, high_func, high_online, _, _, _ = build_metrics(bundle, "高短")
-    school_values = set(pd.concat([high_func["学部"], high_online["学部"]], axis=0).dropna().astype(str).tolist())
-    if "初中" in school_values:
-        print("警告：高短检阅未通过，仍存在初中字段。", school_values)
-    else:
+    high_ok = True
+    for gaoduan_seg in GAODUAN_SEGMENTS:
+        _, _, _, _, high_func, high_online, _, _, _ = build_metrics(bundle, gaoduan_seg)
+        school_values = set(pd.concat([high_func["学部"], high_online["学部"]], axis=0).dropna().astype(str).tolist())
+        if "初中" in school_values:
+            print(f"警告：{gaoduan_seg} 检阅未通过，仍存在初中字段。", school_values)
+            high_ok = False
+    if high_ok:
         print("高短检阅通过：未出现初中字段。")
 
     default_auth_tpl = output_root / "初短二部" / "郑州-初短二部-风灵个微全天在线率&爱芯后台授权.xlsx"

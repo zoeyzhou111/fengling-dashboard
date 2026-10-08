@@ -44,6 +44,8 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .segment-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 8px solid #e11d48; }
 .segment-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 8px solid #22c55e; }
 .segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
+.segment-gaoduan1 { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f59e0b; }
+.segment-gaoduan2 { background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%); border-left: 8px solid #ea580c; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .card-link { text-decoration: none; color: inherit; display: block; border: 1px solid #e5e7eb; border-radius: 10px; background: #f9fafb; padding: 12px; transition: .2s; min-height: 134px; }
@@ -74,6 +76,8 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .weekly-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 6px solid #e11d48; }
 .weekly-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 6px solid #22c55e; }
 .weekly-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f97316; }
+.weekly-gaoduan1 { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f59e0b; }
+.weekly-gaoduan2 { background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%); border-left: 6px solid #ea580c; }
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
 .kpi-value { font-weight: 800; color: #0f172a; }
@@ -218,22 +222,43 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
   </div>
 </section>
 
-<section class="segment-block segment-gaoduan">
-  <h2 class="segment-name">高短</h2>
+<section class="segment-block segment-gaoduan1">
+  <h2 class="segment-name">高短一部</h2>
   <div class="cards">
-    <a class="card-link card-auth" href="每日三表汇总看板_详情/gaoduan_auth.html">
+    <a class="card-link card-auth" href="每日三表汇总看板_详情/gaoduan1_auth.html">
       <div class="card-label">个微授权汇总率</div>
-      <div class="card-value">93.70%</div>
+      <div class="card-value">92.45%</div>
       <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
     </a>
-    <a class="card-link card-online" href="每日三表汇总看板_详情/gaoduan_sales.html">
+    <a class="card-link card-online" href="每日三表汇总看板_详情/gaoduan1_sales.html">
       <div class="card-label">企微在线汇总率</div>
       <div class="card-value">75.00%</div>
       <div class="card-sub">电脑端：75.00%｜手机端：75.00%</div>
     </a>
-    <a class="card-link card-bad" href="每日三表汇总看板_详情/gaoduan_bad.html">
+    <a class="card-link card-bad" href="每日三表汇总看板_详情/gaoduan1_bad.html">
       <div class="card-label">每日不在线汇总人数</div>
       <div class="card-value">5</div>
+      <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
+    </a>
+  </div>
+</section>
+
+<section class="segment-block segment-gaoduan2">
+  <h2 class="segment-name">高短二部</h2>
+  <div class="cards">
+    <a class="card-link card-auth" href="每日三表汇总看板_详情/gaoduan2_auth.html">
+      <div class="card-label">个微授权汇总率</div>
+      <div class="card-value">100.00%</div>
+      <div class="card-sub">点击查看：个微&授权明细表（战队维度）</div>
+    </a>
+    <a class="card-link card-online" href="每日三表汇总看板_详情/gaoduan2_sales.html">
+      <div class="card-label">企微在线汇总率</div>
+      <div class="card-value">#N/A</div>
+      <div class="card-sub">电脑端：#N/A｜手机端：#N/A</div>
+    </a>
+    <a class="card-link card-bad" href="每日三表汇总看板_详情/gaoduan2_bad.html">
+      <div class="card-label">每日不在线汇总人数</div>
+      <div class="card-value">0</div>
       <div class="card-sub">点击查看：风灵在线未达标名单（战队维度）</div>
     </a>
   </div>
