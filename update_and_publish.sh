@@ -51,10 +51,22 @@ run_cmd() {
 }
 
 echo "== Step 0: resolve latest source files =="
-SALES_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "销售风灵在线率明细数据_" 2>/dev/null || true)"
-if [[ -z "${SALES_FILE:-}" ]]; then
-  SALES_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "学习规划师风灵在线率明细数据_")"
-fi
+SALES_FILE="$(python3 - "$DOWNLOADS_DIR" <<'PY'
+import sys
+from pathlib import Path
+
+downloads = Path(sys.argv[1]).expanduser()
+patterns = ("销售风灵在线率明细数据_*.xlsx", "学习规划师风灵在线率明细数据_*.xlsx")
+candidates = []
+for pat in patterns:
+    candidates.extend(downloads.glob(pat))
+candidates = [p for p in candidates if p.is_file()]
+if not candidates:
+    sys.exit(2)
+candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+print(candidates[0])
+PY
+)"
 AUTH_HIGH_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "爱芯个微授权数据_")"
 AUTH_AIXUE_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "爱芯个微授权数据_爱学_")"
 WECHAT_FILE="$(latest_file_by_prefix "$DOWNLOADS_DIR" "风灵个微在线数据_")"
