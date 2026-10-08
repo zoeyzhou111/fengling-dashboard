@@ -40,7 +40,9 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .segment-block { background: #fff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
 .segment-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
 .segment-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 8px solid #8b5cf6; }
-.segment-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #06b6d4; }
+.segment-chuduan3 { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 8px solid #0891b2; }
+.segment-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 8px solid #e11d48; }
+.segment-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 8px solid #22c55e; }
 .segment-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .segment-name { margin: 0 0 12px; font-size: 26px; color: #0f172a; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -57,11 +59,20 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 .section-title { font-size: 24px; margin: 18px 0 8px; color: #0f172a; }
 .mini-table th, .mini-table td { font-size: 28px; }
 .nav-link { display: inline-block; margin: 6px 0 14px; color: #1d4ed8; text-decoration: none; font-weight: 800; }
-.weekly-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.weekly-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.hub-grid { display: grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap: 18px; max-width: 960px; margin: 24px auto; }
+.hub-card { display: block; text-decoration: none; color: inherit; border: 1px solid #dbe2ef; border-radius: 14px; padding: 28px 24px; background: #fff; transition: .2s; }
+.hub-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(15,23,42,0.1); border-color: #93c5fd; }
+.hub-card-title { font-size: 30px; font-weight: 800; margin: 0 0 10px; color: #0f172a; }
+.hub-card-desc { font-size: 16px; color: #64748b; line-height: 1.6; margin: 0; }
+.hub-chuduan { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 8px solid #3b82f6; }
+.hub-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 8px solid #f97316; }
 .weekly-card { border: 1px solid #d1d5db; border-radius: 10px; background: #ffffff; padding: 10px; }
 .weekly-chuduan1 { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); border-left: 6px solid #3b82f6; }
 .weekly-chuduan2 { background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 100%); border-left: 6px solid #8b5cf6; }
-.weekly-xiaoduan { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #06b6d4; }
+.weekly-chuduan3 { background: linear-gradient(135deg, #ecfeff 0%, #ffffff 100%); border-left: 6px solid #0891b2; }
+.weekly-tezhan { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border-left: 6px solid #e11d48; }
+.weekly-xiaoduan { background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%); border-left: 6px solid #22c55e; }
 .weekly-gaoduan { background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border-left: 6px solid #f97316; }
 .weekly-seg { font-size: 18px; color: #334155; font-weight: 700; margin-bottom: 6px; }
 .weekly-kpi { font-size: 14px; color: #475569; line-height: 1.5; }
@@ -93,19 +104,19 @@ body { margin: 0; padding: 18px; font-family: -apple-system, BlinkMacSystemFont,
 <body>
   <div class="page">
     <a id="backLink" class="back-link" href="../chuduan2_auth.html">← 返回初短二部个微授权明细</a>
-    <h1 class="main-title">初短二部｜新兵营-浩 战队明细（2026-08-07）</h1>
+    <h1 class="main-title">初短二部｜新兵营-浩 战队明细（2026-10-07）</h1>
     
 <h2 class="section-title">个微&授权明细</h2>
 <table class="sheet-table mini-table">
   <thead><tr><th>学部</th><th>年级</th><th>战队</th><th>低价课带班</th><th>全天在线</th><th>个微全天在线率</th><th>接流</th><th>授权人数</th><th>正常人数</th><th>爱芯个微授权率</th><th>个微功能正常率</th></tr></thead>
-  <tbody><tr><td>初中</td><td>新兵营</td><td>新兵营-浩</td><td>1</td><td>0</td><td class="rate-blue rate-low">0.00%</td><td>1</td><td>0</td><td>0</td><td class="rate-green rate-low">0.00%</td><td class="rate-mint">0.00%</td></tr></tbody>
+  <tbody><tr><td>初中</td><td>新兵营</td><td>新兵营-浩</td><td>1</td><td>0</td><td class="rate-blue rate-low">0.00%</td><td>1</td><td>1</td><td>0</td><td class="rate-green rate-high">100.00%</td><td class="rate-mint rate-low">0.00%</td></tr></tbody>
 </table>
 
     
 <h2 class="section-title">企微在线明细</h2>
 <table class="sheet-table mini-table">
   <thead><tr><th>学部</th><th>年级</th><th>战队</th><th>接流人数</th><th>电脑端全天在线人数</th><th>电脑端全天在线率</th><th>手机端全天在线人数</th><th>手机端全天在线率</th></tr></thead>
-  <tbody><tr><td>初中</td><td>新兵营</td><td>新兵营-浩</td><td>1</td><td>0</td><td class="rate-blue rate-low">0.00%</td><td>0</td><td class="rate-yellow rate-low">0.00%</td></tr></tbody>
+  <tbody><tr><td colspan="8">无数据</td></tr></tbody>
 </table>
 
     
