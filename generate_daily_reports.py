@@ -348,6 +348,11 @@ def norm_school(grade, src=None, xuebu=None):
     g = normalize_grade_label(grade)
     src_norm = normalize_wechat_source(src) if isinstance(src, str) else src
     xuebu_norm = normalize_wechat_source(xuebu) if isinstance(xuebu, str) else xuebu
+    # 爱芯授权导出常用「学段=初阶」写入学部，与个微侧「初中」不一致会导致授权 join 失败
+    if isinstance(xuebu_norm, str) and xuebu_norm.strip() == "初阶":
+        xuebu_norm = "初中"
+    if g.startswith("0转低") or g.startswith("私域"):
+        return "初中"
     if g == "新兵营":
         if src_norm == "高中":
             return "高中"
