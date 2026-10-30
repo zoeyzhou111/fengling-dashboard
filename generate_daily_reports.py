@@ -372,6 +372,11 @@ def norm_school(grade, src=None, xuebu=None):
         return "初中"
     if g == "B站":
         return "初中"
+    if is_high_school_context(src_norm, g):
+        return "高中"
+    # 销售明细「系统来源=爱学」但年级为一团/战区等，需与个微、授权侧统一为初中
+    if src_norm == "爱学":
+        return "初中"
     if isinstance(xuebu_norm, str):
         if xuebu_norm == "高中":
             return "高中"
