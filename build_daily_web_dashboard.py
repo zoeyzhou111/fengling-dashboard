@@ -1512,13 +1512,34 @@ def build_weekly_page(history_df: pd.DataFrame, today: date, segments: List[str]
 
 
 def write_weekly_dashboard(history_df: pd.DataFrame, date_text: str) -> None:
+    today = date.today()
     WEEKLY_HUB_HTML.write_text(
         build_weekly_page(
             history_df,
-            date.today(),
+            today,
             SEGMENTS,
             title="周维度在线率看板（郑州）",
             back_href="每日三表汇总看板.html",
+        ),
+        encoding="utf-8",
+    )
+    WEEKLY_CHUDUAN_HTML.write_text(
+        build_weekly_page(
+            history_df,
+            today,
+            SEGMENT_GROUPS["初中"],
+            title="周维度在线率看板（初中）",
+            back_href="每日三表汇总看板-初中.html",
+        ),
+        encoding="utf-8",
+    )
+    WEEKLY_GAODUAN_HTML.write_text(
+        build_weekly_page(
+            history_df,
+            today,
+            SEGMENT_GROUPS["高中"],
+            title="周维度在线率看板（高中）",
+            back_href="每日三表汇总看板-高中.html",
         ),
         encoding="utf-8",
     )
@@ -1661,6 +1682,17 @@ def build_daily_dashboard_page(
 </section>
 """
         )
+    group_nav = ""
+    if list(segments) == list(SEGMENTS):
+        group_nav = """
+    <div class="weekly-inline-link-wrap">
+      <a class="weekly-inline-link" href="每日三表汇总看板-初中.html">只看初中（初短 + 特战）</a>
+      <span class="weekly-inline-sep">｜</span>
+      <a class="weekly-inline-link" href="每日三表汇总看板-高中.html">只看高中（小短 + 高短）</a>
+    </div>"""
+    else:
+        group_nav = f"""
+    <a class="nav-link" href="{back_href}">← 返回全部学部看板</a>"""
     return f"""
 <!doctype html>
 <html lang="zh-CN">
@@ -1674,6 +1706,7 @@ def build_daily_dashboard_page(
 <body>
   <div class="page">
     <h1 class="dashboard-title">{title}</h1>
+    {group_nav}
     <div class="weekly-inline-link-wrap">
       <a class="weekly-inline-link" href="{weekly_href}">每周维度在线率看板（点击进入）</a>
       <span class="weekly-inline-sep">｜</span>
@@ -2024,24 +2057,30 @@ def main(as_of_date: str = "") -> None:
     )
     DAILY_HUB_HTML.write_text(unified_page, encoding="utf-8")
     DAILY_CHUDUAN_HTML.write_text(
-        build_redirect_page("每日三表汇总看板.html", "每日三表汇总看板"),
+        build_daily_dashboard_page(
+            summary_rows,
+            date_text,
+            SEGMENT_GROUPS["初中"],
+            title="每日三表汇总看板（初中）",
+            weekly_href="周维度在线率看板-初中.html",
+            back_href="每日三表汇总看板.html",
+        ),
         encoding="utf-8",
     )
     DAILY_GAODUAN_HTML.write_text(
-        build_redirect_page("每日三表汇总看板.html", "每日三表汇总看板"),
+        build_daily_dashboard_page(
+            summary_rows,
+            date_text,
+            SEGMENT_GROUPS["高中"],
+            title="每日三表汇总看板（高中）",
+            weekly_href="周维度在线率看板-高中.html",
+            back_href="每日三表汇总看板.html",
+        ),
         encoding="utf-8",
     )
     VISIT_STATS_HTML.write_text(build_visit_stats_page(), encoding="utf-8")
     history_df = update_history(parse_date_text(date_text) if date_text else date.today(), summary_rows)
     write_weekly_dashboard(history_df, date_text)
-    WEEKLY_CHUDUAN_HTML.write_text(
-        build_redirect_page("周维度在线率看板.html", "周维度在线率看板"),
-        encoding="utf-8",
-    )
-    WEEKLY_GAODUAN_HTML.write_text(
-        build_redirect_page("周维度在线率看板.html", "周维度在线率看板"),
-        encoding="utf-8",
-    )
     print(f"Generated: {DAILY_HUB_HTML}")
     print(f"Generated: {DAILY_CHUDUAN_HTML}")
     print(f"Generated: {DAILY_GAODUAN_HTML}")
